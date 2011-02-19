@@ -63,7 +63,7 @@ class Trace(object):
             elif tag_name == 'PBAS':
                 self.seq = data
        
-       elif elem_code == 18:
+        elif elem_code == 18:
             # if data size is <= 4 byte, data is stored inside the directory
             # so offset needs to be changed
             if dir_size <= 4:
@@ -76,7 +76,7 @@ class Trace(object):
             elif tag_name == 'TUBE':
                 self.well = data
        
-       elif elem_code == 19:
+        elif elem_code == 19:
             fmt = str(elem_no-1) + 's'
             data = struct.unpack(fmt,
                     self._data[dir_offset:dir_offset+dir_size-1])[0]
@@ -84,6 +84,7 @@ class Trace(object):
                 self.plateid = data
             elif tag_name == 'HCFG':
                 self.instrument = data
+     
         else:
             pass    
 
