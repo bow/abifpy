@@ -19,7 +19,7 @@ FMT_DIR = '>4sIHHIIII'
 FMT_HEAD = '>4sH4sIHHIII'
 # only retrieve the data we care about:
 # plate barcode, machine model, sequence, quality values sample id, well number
-TAGS = {'CTID1':'plateid', 'HCFG3':'instrument', 'PBAS2':'seq', 'PCON2':'qual', 'SMPL1':'sampleid', 'TUBE1':'well'}
+TAGS = {'HCFG3':'instrument', 'PBAS2':'seq', 'PCON2':'qual', 'SMPL1':'sampleid', 'TUBE1':'well'}
 
 
 class Trace(object):
@@ -98,9 +98,7 @@ class Trace(object):
             fmt = str(dir_size-1) + 's'
             data = struct.unpack(fmt,
                     self._data[dir_offset:dir_offset+dir_size-1])[0]
-            if tag_name == 'CTID':
-                self.plateid = data
-            elif tag_name == 'HCFG':
+            if tag_name == 'HCFG':
                 self.instrument = data
     
     # method to build list of numerical quality values
