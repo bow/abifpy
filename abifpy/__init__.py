@@ -110,15 +110,14 @@ class Trace(object):
             qual_list.append(ord(i))
         return qual_list
 
-#class Seq(Trace):
+    # method to create a SeqRecord object based on sequence
+    def seqrecord(self):
+        pass
 
-# write parser for file header
-# write parser for directory entries
+    # method to write sequence to file
+    def write(self):
+        pass
 
-# open file
-## parse file header
-## parse directory entries
-# get sequence
-## find directory entries related to sequence information
-# get miscellaneous data
-# write sequence
+    # method to trim sequence based on quality values
+    def trim(self):
+        pass
