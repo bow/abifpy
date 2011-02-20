@@ -13,12 +13,13 @@ Usage
 
 ::
 
- import abifpy
- yummy = abifpy.Trace('tracefile.ab1')
+ $ python
+ >>> import abifpy
+ >>> yummy = abifpy.Trace('tracefile.ab1')
 
 By default, only these tags are extracted::
 
-    yummy.seq         # sequence data as called by the basecaller
+    yummy.seq         # sequence data as called by the basecaller, untrimmed
     yummy.qual        # quality values after basecalling
     yummy.sampleid    # sample id entered before the run
     yummy.well        # well coordinate of the sample (A1-K12, if using a 96-well plate)
