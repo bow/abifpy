@@ -1,5 +1,5 @@
 ======
-abifpy
+ABIFPY
 ======
 
 ------------------------------------------
@@ -18,18 +18,13 @@ Usage
 
 By default, only these tags are extracted::
 
-    # sequence data as called by the basecaller
-    yummy.seq
-    # quality values after basecalling
-    yummy.qual
-    # sample ID as entered before the run
-    yummy.sampleid
-    # well coordinate (A1-K12) of the sample
-    yummy.well
-    # sequencing instrument model
-    yummy.instrument
+    yummy.seq         # sequence data as called by the basecaller
+    yummy.qual        # quality values after basecalling
+    yummy.sampleid    # sample id entered before the run
+    yummy.well        # well coordinate of the sample (A1-K12, if using a 96-well plate)
+    yummy.instrument  # sequencing machine model
 
-You can invoke the `all_tags=True` option when instantiating the class to get all tags available. These tags can then be viewed using as the `yummy.tags` attribute. Be warned that the module are only able to read data from the five tags above. If you want to make sense of the extra tags, all the information is in the `official spec`_. 
+You can invoke the ``all_tags=True`` option when instantiating the class to get all tags available. These tags can then be viewed using as the ``yummy.tags`` attribute. Be warned that the module are only able to read data from the five tags above. If you want to make sense of the extra tags, all the information is in the `official spec`_. 
 
 
 License
