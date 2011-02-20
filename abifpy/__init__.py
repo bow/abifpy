@@ -24,14 +24,14 @@ class Trace(object):
         if self._data[:4] == 'ABIF':
             self._header = struct.unpack(FMT_HEAD, self._data[:30])
             self.version = self._header[1]
-            self._elemsize = self._header[5]
-            self._elemnum = self._header[6]
-            self._offset = self._header[8]
+            head_elemsize = self._header[5]
+            head_elemnum = self._header[6]
+            head_offset = self._header[8]
             self.tags = {}
 
             # build dictionary of tags that we care about if all_tags=False
             # otherwise get all tags
-            for entry in self._gen_dir():
+            for entry in self._gen_dir(head_offset, head_elemsize, head_elemnum):
                 if not all_tags:
                     if (entry[0] + str(entry[1])) in TAGS:
                         self.tags[entry[0] + str(entry[1])] = entry
@@ -46,11 +46,11 @@ class Trace(object):
             print "File error. Make sure the file is a proper .ab1 file."
     
     # generator for directories
-    def _gen_dir(self):
+    def _gen_dir(self, head_offset, head_elemsize, head_elemnum):
         index = 0
-        while index < self._elemnum:
-            start = self._offset + index * self._elemsize
-            finish = self._offset + (index + 1) * self._elemsize
+        while index < head_elemnum:
+            start = head_offset + index * head_elemsize
+            finish = head_offset + (index + 1) * head_elemsize
             yield struct.unpack(FMT_DIR, self._data[start:finish]) + (start,)
             index += 1
 
@@ -59,7 +59,7 @@ class Trace(object):
                     (tag_name, tag_no, elem_code, elem_size, elem_no,
                      dir_size, dir_offset, dir_handle, data_offset)):
         if elem_code == 2:
-            fmt = str(elem_no) + 's'
+            fmt = str(dir_size) + 's'
             data = struct.unpack(fmt, 
                     self._data[dir_offset:dir_offset+dir_size])[0]
             if tag_name == 'PCON':
@@ -72,16 +72,16 @@ class Trace(object):
             # so offset needs to be changed
             if dir_size <= 4:
                 dir_offset = data_offset + 20
-            fmt = str(elem_no-1) + 's'
+            fmt = str(dir_size-1) + 's'
             data = struct.unpack(fmt,
-                    self._data[dir_offset+1:dir_offset+elem_no])[0]
+                    self._data[dir_offset+1:dir_offset+dir_size])[0]
             if tag_name == 'SMPL':
                 self.sampleid = data
             elif tag_name == 'TUBE':
                 self.well = data
        
         elif elem_code == 19:
-            fmt = str(elem_no-1) + 's'
+            fmt = str(dir_size-1) + 's'
             data = struct.unpack(fmt,
                     self._data[dir_offset:dir_offset+dir_size-1])[0]
             if tag_name == 'CTID':
