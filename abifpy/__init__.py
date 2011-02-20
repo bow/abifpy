@@ -17,7 +17,7 @@ class Trace(object):
 
     """Class representing trace file"""
 
-    def __init__(self, tfile):        
+    def __init__(self, tfile, all_tags=False):        
         with open(tfile) as source:
             self._data = source.read()
 
@@ -29,9 +29,13 @@ class Trace(object):
             self._offset = self._header[8]
             self.tags = {}
 
-            # build dictionary of tags that we care about
+            # build dictionary of tags that we care about if all_tags=False
+            # otherwise get all tags
             for entry in self._gen_dir():
-                if (entry[0] + str(entry[1])) in TAGS:
+                if not all_tags:
+                    if (entry[0] + str(entry[1])) in TAGS:
+                        self.tags[entry[0] + str(entry[1])] = entry
+                else:
                     self.tags[entry[0] + str(entry[1])] = entry
 
             # retrieve attributes from tags
