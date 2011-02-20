@@ -3,13 +3,7 @@
 """Python module for reading .ab1 trace files"""
 
 import struct
-try:
-    from Bio import Seq
-    from Bio import SeqIO
-    from Bio import SeqRecord
-    BIOPYTHON = True
-except ImportError:
-    BIOPYTHON = False
+import re
 
 # directory data structure:
 # tag name, tag number, element type code, element size, number of elements
@@ -83,7 +77,7 @@ class Trace(object):
             if tag_name == 'PCON':
                 self.qual = self._get_qual(data)
             elif tag_name == 'PBAS':
-                self.seq = data
+                self.seq = re.sub("K|Y|W|M|R|S",'N',data)
        
         elif elem_code == 18:
             fmt = str(dir_size-1) + 's'
@@ -102,6 +96,7 @@ class Trace(object):
                 self.instrument = data
     
     # method to build list of numerical quality values
+    # returns a list of quality values
     def _get_qual(self, qual):
         qual_list = []
         for i in qual:
@@ -109,12 +104,38 @@ class Trace(object):
         return qual_list
 
     # method to create a SeqRecord object based on sequence
+    # returns a SeqRecord object
     def seqrecord(self):
-        pass
+        try:
+            from Bio.Seq import Seq
+            from Bio.SeqRecord import SeqRecord
+            BIOPYTHON = True
+        except ImportError:
+            BIOPYTHON = False
+
+        if BIOPYTHON:
+            return SeqRecord(Seq(self.seq), id=self.id, name="",
+                      description=self.sampleid)
+        else:
+            print 'Biopython not detected. No SeqRecord created.'
+            return None
 
     # method to write sequence to file
-    def write(self):
-        pass
+    # default output file is 'tracefile.fa'
+    def write(self, output_file=""):
+        record = self.seqrecord()
+
+        if output_file == "":
+            output_file = self.id + '.fa'
+
+        if record:
+            from Bio import SeqIO
+            SeqIO.write(record, output_file, 'fasta')
+        else:
+            with open(output_file, 'rw') as tfile:
+                contents = '>{0} {1}\n{2}'.format(
+                            self.id, self.sampleid, self.seq)
+                tfile.writelines(contents)
 
     # method to trim sequence based on quality values
     def trim(self):
