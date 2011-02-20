@@ -26,17 +26,22 @@ class Trace(object):
 
     """Class representing trace file"""
 
-    def __init__(self, tfile, all_tags=False):        
-        with open(tfile) as source:
-            self._data = source.read()
-
-        if self._data[:4] == 'ABIF':
+    def __init__(self, sfile, all_tags=False):        
+        try:
+            with open(sfile) as source:
+                self._data = source.read()
+            if not self._data[:4] == 'ABIF':
+                raise IOError('Input file is not a proper .ab1 trace file')
+        except IOError as (strerror):
+            print "IOError: {0}".format(strerror)
+        else:
             self._header = struct.unpack(FMT_HEAD, self._data[:30])
             self.version = self._header[1]
             head_elemsize = self._header[5]
             head_elemnum = self._header[6]
             head_offset = self._header[8]
             self.tags = {}
+            self.id = sfile.replace('.ab1','')
 
             # build dictionary of tags that we care about if all_tags=False
             # otherwise get all tags
@@ -50,9 +55,6 @@ class Trace(object):
             # retrieve attributes from tags
             for item in self.tags:
                 self._decode_dir(self.tags[item])
-        else:
-            del self._data
-            print "File error. Make sure the file is a proper .ab1 file."
     
     # generator for directories
     def _gen_dir(self, head_offset, head_elemsize, head_elemnum):
