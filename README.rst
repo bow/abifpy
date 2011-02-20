@@ -34,6 +34,10 @@ Additionally, these attributes can also be accessed::
 
 You can invoke the ``all_tags=True`` option when instantiating the class to get all tags available. These tags can then be viewed using as the ``yummy.tags`` attribute. Be warned that the module are only able to read data from the extracted tags above. If you want to make sense of the extra tags, I suggest reading the `official spec`_. 
 
+The module can be used with Biopython if it is installed. It provides the following methods::
+
+    yummy.seqrecord()   # returns a SeqRecord object of the trace file
+    yummy.write()       # writes a fasta file of the trace file
 
 License
 =======

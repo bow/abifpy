@@ -2,8 +2,8 @@
 
 """Python module for reading .ab1 trace files"""
 
-import struct
 import re
+import struct
 
 # directory data structure:
 # tag name, tag number, element type code, element size, number of elements
@@ -17,9 +17,7 @@ TAGS = {'HCFG3':'instrument', 'PBAS2':'seq', 'PCON2':'qual', 'SMPL1':'sampleid',
 
 
 class Trace(object):
-
     """Class representing trace file"""
-
     def __init__(self, sfile, all_tags=False):        
         try:
             with open(sfile) as source:
@@ -50,8 +48,8 @@ class Trace(object):
             for item in self.tags:
                 self._decode_dir(self.tags[item])
     
-    # generator for directories
     def _gen_dir(self, head_offset, head_elemsize, head_elemnum):
+        """Generator for directory contents."""
         index = 0
         while index < head_elemnum:
             start = head_offset + index * head_elemsize
@@ -61,10 +59,10 @@ class Trace(object):
             yield struct.unpack(FMT_DIR, self._data[start:finish]) + (start,)
             index += 1
 
-    # method to decode contents in a directory structure
     def _decode_dir(self, 
                     (tag_name, tag_no, elem_code, elem_size, elem_no,
                      dir_size, dir_offset, dir_handle, data_offset)):
+        """Extracts data from directories in the file."""
         # if data size is <= 4 bytes, data is stored inside the directory
         # so offset needs to be changed
         if dir_size <= 4:
@@ -77,6 +75,7 @@ class Trace(object):
             if tag_name == 'PCON':
                 self.qual = self._get_qual(data)
             elif tag_name == 'PBAS':
+                # replaces semi-ambiguous DNA characters with 'N'
                 self.seq = re.sub("K|Y|W|M|R|S",'N',data)
        
         elif elem_code == 18:
@@ -95,17 +94,15 @@ class Trace(object):
             if tag_name == 'HCFG':
                 self.instrument = data
     
-    # method to build list of numerical quality values
-    # returns a list of quality values
     def _get_qual(self, qual):
+        """Returns a list of read quality values."""
         qual_list = []
         for i in qual:
             qual_list.append(ord(i))
         return qual_list
 
-    # method to create a SeqRecord object based on sequence
-    # returns a SeqRecord object
     def seqrecord(self):
+        """Returns a SeqRecord object of the trace file."""
         try:
             from Bio.Seq import Seq
             from Bio.SeqRecord import SeqRecord
@@ -117,26 +114,30 @@ class Trace(object):
             return SeqRecord(Seq(self.seq), id=self.id, name="",
                       description=self.sampleid)
         else:
-            print 'Biopython not detected. No SeqRecord created.'
+            print 'Biopython was not detected. No SeqRecord was created.'
             return None
 
-    # method to write sequence to file
-    # default output file is 'tracefile.fa'
-    def write(self, output_file=""):
+    def write(self, output=""):
+        """Writes the trace file sequence to a fasta file.
+        
+        Keyword argument:
+        output -- output file name (detault 'tracefile'.fa)
+
+        """
         record = self.seqrecord()
 
-        if output_file == "":
-            output_file = self.id + '.fa'
+        if output == "":
+            output = self.id + '.fa'
 
         if record:
             from Bio import SeqIO
-            SeqIO.write(record, output_file, 'fasta')
+            SeqIO.write(record, output, 'fasta')
         else:
-            with open(output_file, 'rw') as tfile:
+            with open(output, 'rw') as tfile:
                 contents = '>{0} {1}\n{2}'.format(
                             self.id, self.sampleid, self.seq)
                 tfile.writelines(contents)
 
-    # method to trim sequence based on quality values
     def trim(self):
+        """Trims the sequence based on quality values."""
         pass
