@@ -1,6 +1,15 @@
 #!/usr/bin/env python
 
+"""Python module for reading .ab1 trace files"""
+
 import struct
+try:
+    from Bio import Seq
+    from Bio import SeqIO
+    from Bio import SeqRecord
+    BIOPYTHON = True
+except ImportError:
+    BIOPYTHON = False
 
 # directory data structure:
 # tag name, tag number, element type code, element size, number of elements
@@ -51,6 +60,8 @@ class Trace(object):
         while index < head_elemnum:
             start = head_offset + index * head_elemsize
             finish = head_offset + (index + 1) * head_elemsize
+            # added directory offset to tuple
+            # to handle directories with data size <= 4 bytes
             yield struct.unpack(FMT_DIR, self._data[start:finish]) + (start,)
             index += 1
 
@@ -58,20 +69,21 @@ class Trace(object):
     def _decode_dir(self, 
                     (tag_name, tag_no, elem_code, elem_size, elem_no,
                      dir_size, dir_offset, dir_handle, data_offset)):
+        # if data size is <= 4 bytes, data is stored inside the directory
+        # so offset needs to be changed
+        if dir_size <= 4:
+            dir_offset = data_offset + 20
+
         if elem_code == 2:
             fmt = str(dir_size) + 's'
             data = struct.unpack(fmt, 
                     self._data[dir_offset:dir_offset+dir_size])[0]
             if tag_name == 'PCON':
-                self.qual = data
+                self.qual = self._get_qual(data)
             elif tag_name == 'PBAS':
                 self.seq = data
        
         elif elem_code == 18:
-            # if data size is <= 4 byte, data is stored inside the directory
-            # so offset needs to be changed
-            if dir_size <= 4:
-                dir_offset = data_offset + 20
             fmt = str(dir_size-1) + 's'
             data = struct.unpack(fmt,
                     self._data[dir_offset+1:dir_offset+dir_size])[0]
@@ -88,9 +100,13 @@ class Trace(object):
                 self.plateid = data
             elif tag_name == 'HCFG':
                 self.instrument = data
-     
-        else:
-            pass    
+    
+    # method to build list of numerical quality values
+    def _get_qual(self, qual):
+        qual_list = []
+        for i in qual:
+            qual_list.append(ord(i))
+        return qual_list
 
 #class Seq(Trace):
 
