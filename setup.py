@@ -14,9 +14,9 @@ setup(
     description = ("Python module to read .ab1 trace files."),
     license = "MIT",
     keywords = "ab1 trace sequencing"
-    url = "",
-    packages=['abifpy', 'tests'],
-    long_description=read('README.rst'),
+    url = "http://github.com/warindrarto/abifpy",
+    packages = ['abifpy'],
+    long_description = read('README.rst'),
     classifiers = [
         "Development Status :: 3 - Alpha",
         "Intended Audience :: Science/Research",
