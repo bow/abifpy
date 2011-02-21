@@ -67,8 +67,7 @@ class Trace(object):
         """Extracts data from directories in the file."""
         # if data size is <= 4 bytes, data is stored inside the directory
         # so offset needs to be changed
-        tag_name, tag_no, elem_code, elem_size, elem_no, dir_size, dir_offset, 
-         dir_handle, data_offset = dir_entry
+        tag_name, tag_no, elem_code, elem_size, elem_no, dir_size, dir_offset, dir_handle, data_offset = dir_entry
 
         if dir_size <= 4:
             dir_offset = data_offset + 20
