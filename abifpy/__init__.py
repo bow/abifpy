@@ -129,14 +129,10 @@ class Trace(object):
         if output == "":
             output = self.id + '.fa'
 
-        if record:
-            from Bio import SeqIO
-            SeqIO.write(record, output, 'fasta')
-        else:
-            with open(output, 'rw') as tfile:
-                contents = '>{0} {1}\n{2}'.format(
-                            self.id, self.sampleid, self.seq)
-                tfile.writelines(contents)
+        with open(output, 'rw') as tfile:
+            contents = '>{0} {1}\n{2}\n'.format(
+                        self.id, self.sampleid, self.seq)
+            tfile.writelines(contents)
 
     def trim(self):
         """Trims the sequence based on quality values."""
