@@ -29,15 +29,12 @@ class Trace(object):
         else:
             self._header = struct.unpack(FMT_HEAD, self._data[:30])
             self.version = self._header[1]
-            head_elemsize = self._header[5]
-            head_elemnum = self._header[6]
-            head_offset = self._header[8]
             self.tags = {}
-            self.id = sfile.replace('.ab1','')
+            self.id = in_file.replace('.ab1','')
 
             # build dictionary of tags that we care about if all_tags=False
             # otherwise get all tags
-            for entry in self._gen_dir(head_offset, head_elemsize, head_elemnum):
+            for entry in self._gen_dir(self._header):
                 if not all_tags:
                     if (entry[0] + str(entry[1])) in TAGS:
                         self.tags[entry[0] + str(entry[1])] = entry
@@ -46,13 +43,17 @@ class Trace(object):
 
             # retrieve attributes from tags
             for item in self.tags:
-                self._decode_dir(self.tags[item])
+                self._extract_dir(self.tags[item])
 
             if trimming:
                 self.trim()
     
-    def _gen_dir(self, head_offset, head_elemsize, head_elemnum):
+    def _gen_dir(self, head_entry):
         """Generator for directory contents."""
+        head_elemsize = head_entry[5]
+        head_elemnum = head_entry[6]
+        head_offset = head_entry[8]
+        
         index = 0
         while index < head_elemnum:
             start = head_offset + index * head_elemsize
@@ -62,12 +63,13 @@ class Trace(object):
             yield struct.unpack(FMT_DIR, self._data[start:finish]) + (start,)
             index += 1
 
-    def _decode_dir(self, 
-                    (tag_name, tag_no, elem_code, elem_size, elem_no,
-                     dir_size, dir_offset, dir_handle, data_offset)):
+    def _extract_dir(self, dir_entry):
         """Extracts data from directories in the file."""
         # if data size is <= 4 bytes, data is stored inside the directory
         # so offset needs to be changed
+        tag_name, tag_no, elem_code, elem_size, elem_no, dir_size, dir_offset, 
+         dir_handle, data_offset = dir_entry
+
         if dir_size <= 4:
             dir_offset = data_offset + 20
 
@@ -119,11 +121,11 @@ class Trace(object):
         try:
             from Bio.Seq import Seq
             from Bio.SeqRecord import SeqRecord
-            BIOPYTHON = True
+            biopython = True
         except ImportError:
-            BIOPYTHON = False
+            biopython = False
 
-        if BIOPYTHON:
+        if biopython:
             return SeqRecord(Seq(self.seq), id=self.id, name="",
                       description=self.sampleid)
         else:
@@ -137,8 +139,6 @@ class Trace(object):
         output -- output file name (detault 'tracefile'.fa)
 
         """
-        record = self.seqrecord()
-
         if output == "":
             output = self.id + '.fa'
 
@@ -159,7 +159,6 @@ class Trace(object):
         negative, the entire segment will be trimmed.
         
         """
-       
         # set flag for trimming
         take = False
         trim_start = 0
