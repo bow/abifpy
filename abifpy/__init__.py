@@ -151,7 +151,7 @@ class Trace(object):
         
         Keyword argument:
         cutoff -- probability cutoff value
-        window -- segment size for calculating segment score
+        segment -- segment size for calculating segment score
 
         Trimmed bases are determined from their segment score, ultimately
         determined from each base's quality values. If a segment score is
@@ -166,7 +166,7 @@ class Trace(object):
         self.score = self._get_score(cutoff)
         
         if len(self.score) <= segment:
-            print "Sequence length for {0} is shorter than trim segment size (20). Sequence not trimmed.".format(self.id)
+            print "Sequence length for {0} is shorter than trim segment size ({1}). Sequence not trimmed.".format(self.id, segment)
         else:
             for index in xrange(len(self.seq)-segment):
                 # calculate segment score
