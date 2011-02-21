@@ -168,8 +168,7 @@ class Trace(object):
         self.score = self._get_score(cutoff)
         
         if len(self.score) <= segment:
-            print "Sequence length for {0} is shorter than trim segment size. \
-                    Sequence not trimmed.".format(x.id)
+            print "Sequence length for {0} is shorter than trim segment size (20). Sequence not trimmed.".format(self.id)
         else:
             for index in xrange(len(self.seq)-segment):
                 # calculate segment score
@@ -188,8 +187,6 @@ class Trace(object):
                         break
                     else:
                         break
-
-            # print "Trimmed {0} from base {1} to {2} and base {3} to {4}.".format(self.id, 1, trim_start+1, trim_finish+1, len(self.seq))
                 
             self.seq = self.seq[trim_start:trim_finish]
             self.qual = self.qual[trim_start:trim_finish]
