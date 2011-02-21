@@ -18,7 +18,7 @@ TAGS = {'HCFG3':'instrument', 'PBAS2':'seq', 'PCON2':'qual', 'SMPL1':'sampleid',
 
 class Trace(object):
     """Class representing trace file"""
-    def __init__(self, sfile, all_tags=False):        
+    def __init__(self, sfile, trimming=False, all_tags=False):        
         try:
             with open(sfile) as source:
                 self._data = source.read()
@@ -47,6 +47,9 @@ class Trace(object):
             # retrieve attributes from tags
             for item in self.tags:
                 self._decode_dir(self.tags[item])
+
+            if trimming:
+                self.trim()
     
     def _gen_dir(self, head_offset, head_elemsize, head_elemnum):
         """Generator for directory contents."""
@@ -97,9 +100,19 @@ class Trace(object):
     def _get_qual(self, qual):
         """Returns a list of read quality values."""
         qual_list = []
-        for i in qual:
-            qual_list.append(ord(i))
+        for value in qual:
+            qual_list.append(ord(value))
         return qual_list
+
+    def _get_score(self, cutoff):
+        """Returns a list of read probability scores."""
+        score_list = []
+        for qual in self.qual:
+            # calculate probability back from formula used
+            # to calculate phred qual values
+            prob = 10 ** (qual/-10.0)
+            score_list.append(cutoff - prob)
+        return score_list
 
     def seqrecord(self):
         """Returns a SeqRecord object of the trace file."""
@@ -134,6 +147,50 @@ class Trace(object):
                         self.id, self.sampleid, self.seq)
             tfile.writelines(contents)
 
-    def trim(self):
-        """Trims the sequence based on quality values."""
-        pass
+    def trim(self, segment=20, cutoff=0.05):
+        """Trims the sequence using Richard Mott's modified trimming algorithm.
+        
+        Keyword argument:
+        cutoff -- probability cutoff value
+        window -- segment size for calculating segment score
+
+        Trimmed bases are determined from their segment score, ultimately
+        determined from each base's quality values. If a segment score is
+        negative, the entire segment will be trimmed.
+        
+        """
+       
+        # set flag for trimming
+        take = False
+        trim_start = 0
+        trim_finish = len(self.seq)
+        # obtain scores of each base (based on qual values)
+        self.score = self._get_score(cutoff)
+        
+        if len(self.score) <= segment:
+            print "Sequence length for {0} is shorter than trim segment size. \
+                    Sequence not trimmed.".format(x.id)
+        else:
+            for index in xrange(len(self.seq)-segment):
+                # calculate segment score
+                # if segment score is negative, trim the region out
+                segment_score = reduce(lambda x,y:x+y,
+                                 self.score[index:index+segment])
+                # algorithm for obtaining trimming position values
+                if take == False and segment_score > 0:
+                    trim_start = index
+                    take = True
+                elif take == True and segment_score <= 0:
+                    # if segment length is longer than remaining bases
+                    # take up everything until the end
+                    if index + segment <= len(self.seq):
+                        trim_finish = index + segment - 1
+                        break
+                    else:
+                        break
+
+            # print "Trimmed {0} from base {1} to {2} and base {3} to {4}.".format(self.id, 1, trim_start+1, trim_finish+1, len(self.seq))
+                
+            self.seq = self.seq[trim_start:trim_finish]
+            self.qual = self.qual[trim_start:trim_finish]
+            self.score = self.score[trim_start:trim_finish]
