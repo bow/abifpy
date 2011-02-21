@@ -19,7 +19,11 @@ Usage
     >>> import abifpy
     >>> yummy = abifpy.Trace('tracefile.ab1')
 
-By default, only these data are extracted::
+Or if you want to perform trimming directly: ::
+    
+    >>> yummy = abifpy.Trace('tracefile.ab1', trimming=True)
+
+By default, only these data are extracted: ::
 
     yummy.seq         # string of untrimmed sequence as called by the basecaller
     yummy.qual        # list of quality values after basecalling
@@ -28,9 +32,10 @@ By default, only these data are extracted::
     yummy.instrument  # string of sequencing machine model
     yummy.id          # string of trace file name
 
-Additionally, these attributes can also be accessed::
+Additionally, these attributes can also be accessed: ::
 
     yummy.tags        # dictionary of tags with values of directory contents
+    yummy.score       # scores used for trimming, accessible after trim() is invoked
     yummy._header     # tuple of extracted header values
     yummy._data       # string representation of file contents
 
@@ -43,8 +48,9 @@ spec`_.
 The module can be used with Biopython if it is installed. It provides the
 following methods::
 
-    yummy.seqrecord()   # returns a SeqRecord object of the trace file
     yummy.write()       # writes a fasta file of the trace file
+    yummy.trim()        # trims the sequence using Richard Mott's algorithm (used in phred)
+    yummy.seqrecord()   # returns a SeqRecord object of the trace file
 
 License
 =======
