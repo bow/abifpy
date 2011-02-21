@@ -18,12 +18,12 @@ TAGS = {'HCFG3':'instrument', 'PBAS2':'seq', 'PCON2':'qual', 'SMPL1':'sampleid',
 
 class Trace(object):
     """Class representing trace file"""
-    def __init__(self, sfile, trimming=False, all_tags=False):        
+    def __init__(self, in_file, trimming=False, all_tags=False):        
         try:
-            with open(sfile) as source:
+            with open(in_file) as source:
                 self._data = source.read()
             if not self._data[:4] == 'ABIF':
-                raise IOError('Input file is not a proper .ab1 trace file')
+                raise IOError('Input is not a valid .ab1 trace file')
         except IOError as (strerror):
             print "IOError: {0}".format(strerror)
         else:
@@ -142,10 +142,10 @@ class Trace(object):
         if output == "":
             output = self.id + '.fa'
 
-        with open(output, 'rw') as tfile:
+        with open(output, 'rw') as out_file:
             contents = '>{0} {1}\n{2}\n'.format(
                         self.id, self.sampleid, self.seq)
-            tfile.writelines(contents)
+            out_file.writelines(contents)
 
     def trim(self, segment=20, cutoff=0.05):
         """Trims the sequence using Richard Mott's modified trimming algorithm.
@@ -176,10 +176,10 @@ class Trace(object):
                 segment_score = reduce(lambda x,y:x+y,
                                  self.score[index:index+segment])
                 # algorithm for obtaining trimming position values
-                if take == False and segment_score > 0:
+                if not take and segment_score > 0:
                     trim_start = index
                     take = True
-                elif take == True and segment_score <= 0:
+                elif take and segment_score <= 0:
                     # if segment length is longer than remaining bases
                     # take up everything until the end
                     if index + segment <= len(self.seq):
