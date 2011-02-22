@@ -52,6 +52,13 @@ following methods::
     yummy.trim()        # trims the sequence using Richard Mott's algorithm (used in phred)
     yummy.seqrecord()   # returns a SeqRecord object of the trace file
 
+Installation
+============
+
+Just add the abifpy directory to your ``$PYTHONPATH`` or::
+
+    $ python setup.py install
+
 License
 =======
 
