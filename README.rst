@@ -55,7 +55,7 @@ following methods::
 Installation
 ============
 
-Just add the abifpy directory to your ``$PYTHONPATH``
+Just add the abifpy directory to your ``$PYTHONPATH`` (in .bashrc to make it persistent)
 
 License
 =======
