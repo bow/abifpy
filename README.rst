@@ -55,9 +55,7 @@ following methods::
 Installation
 ============
 
-Just add the abifpy directory to your ``$PYTHONPATH`` or::
-
-    $ python setup.py install
+Just add the abifpy directory to your ``$PYTHONPATH``
 
 License
 =======
