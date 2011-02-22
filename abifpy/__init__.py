@@ -15,6 +15,7 @@ FMT_HEAD = '>4sH4sIHHIII'
 # plate barcode, machine model, sequence, quality values sample id, well number
 TAGS = {'HCFG3':'instrument', 'PBAS2':'seq', 'PCON2':'qual', 'SMPL1':'sampleid', 'TUBE1':'well'}
 
+__version__ = '0.2'
 
 class Trace(object):
     """Class representing trace file"""
