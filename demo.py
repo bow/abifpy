@@ -11,7 +11,7 @@ counter = 0
 print "Working..."
 
 for trace in glob.glob('*.ab1'):
-    abifpy.Trace(trace).write()
+    abifpy.Trace(trace, trimming=True).write()
     counter += 1
 
-print "Done! Processed {0} trace files into fasta files.".format(counter)
+print "Done! Processed {0} trace files.".format(counter)
