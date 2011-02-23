@@ -156,21 +156,27 @@ class Trace(object):
         qual -- 0: write fasta file, 1: write qual file, 2: write fastq file
 
         """
-        if out_file == "" and qual == 0:
-            out_file = self.meta['id'] + '.fa'
+        
+        if out_file == "":
+            file_name = self.meta['id']
+        else:
+            file_name = out_file
+        
+        if qual == 0:
+            file_name += '.fa'
             contents = '>{0} {1}\n{2}\n'.format(
-                        self.meta['id'], self.meta['sampleid'], self.seq())
-        elif out_file == "" and qual == 1:
-            out_file = self.meta['id'] + '.qual'
+                        file_name, self.meta['sampleid'], self.seq())
+        elif qual == 1:
+            file_name += '.qual'
             contents = '>{0} {1}\n{2}\n'.format(
-                        self.meta['id'], self.meta['sampleid'], ' '.join(self.qual(char=False)))
-        elif out_file == "" and qual == 2:
-            out_file = self.meta['id'] + '.fq'
+                        file_name, self.meta['sampleid'], ' '.join(self.qual(char=False)))
+        elif qual == 2:
+            file_name += '.fq'
             contents = '@{0} {1}\n{2}\n+{0} {1}\n{3}\n'.format(
-                        self.meta['id'], self.meta['sampleid'], self.seq(), ''.join(self.qual()))
+                        file_name, self.meta['sampleid'], self.seq(), ''.join(self.qual()))
 
-        with open(out_file, 'w') as ofile:
-            ofile.writelines(contents)
+        with open(file_name, 'w') as out_file:
+            out_file.writelines(contents)
 
     def trim(self, seq, segment=20, cutoff=0.05):
         """Trims the sequence using Richard Mott's modified trimming algorithm.
@@ -189,7 +195,6 @@ class Trace(object):
         take = False
         trim_start = 0
         trim_finish = len(seq)
-        # obtain scores of each base (based on qual values)
         
         if len(seq) <= segment:
             print "Sequence length for {0} is shorter than trim segment size ({1}). Sequence not trimmed.".format(self.meta['id'], segment)
