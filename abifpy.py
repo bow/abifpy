@@ -78,7 +78,7 @@ class Trace(object):
             data = struct.unpack(fmt, 
                     self._data[dir_offset:dir_offset+dir_size])[0]
             if tag_name == 'PCON':
-                self.qual = self._get_qual(data)
+                self.qual = self.get_qual(data)
             elif tag_name == 'PBAS':
                 # replaces semi-ambiguous DNA characters with 'N'
                 self.seq = re.sub("K|Y|W|M|R|S",'N',data)
@@ -99,11 +99,17 @@ class Trace(object):
             if tag_name == 'HCFG':
                 self.instrument = data
     
-    def _get_qual(self, qual):
+    def get_qual(self, qual, char=False):
         """Returns a list of read quality values."""
         qual_list = []
-        for value in qual:
-            qual_list.append(ord(value))
+        if not char:    
+            for value in qual:
+                qual_list.append(ord(value))
+        else:
+            for value in qual:
+                if value > 93:
+                    value = 93
+                qual_list.append(ord(value + 33))
         return qual_list
 
     def _get_score(self, cutoff):
