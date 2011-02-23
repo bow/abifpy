@@ -8,7 +8,7 @@ Python module for reading .ab1 trace files
 
 abifpy is a python module that extracts sequence and various other data from
 Applied Biosystem's, Inc. format (ABIF) file. The module was written based on
-the `official spec`_ released by Applied Biosystem.
+the `official spec`_ released by Applied Biosystems.
 
 Usage
 =====
@@ -19,43 +19,65 @@ Usage
     >>> import abifpy
     >>> yummy = abifpy.Trace('tracefile.ab1')
 
-Or if you want to perform trimming directly: ::
+Or if you want to perform base trimming directly: ::
     
     >>> yummy = abifpy.Trace('tracefile.ab1', trimming=True)
 
-By default, only these data are extracted: ::
+The module can be used with Biopython if it is installed. It provides the
+following methods: ::
 
-    yummy.seq         # string of untrimmed sequence as called by the basecaller
-    yummy.qual        # list of quality values after basecalling
-    yummy.sampleid    # string of sample ID entered before the run
-    yummy.well        # string of well ID
-    yummy.instrument  # string of sequencing machine model
-    yummy.id          # string of trace file name
+    yummy.write(out_file="", qual=0)       
+    # writes a fasta (qual=0), qual (qual=1), or fastq (qual=1) file from the trace file
+    # default output is tracefile.fa
+
+    yummy.seq()
+    # returns a string of nucleotide sequence as called by the basecaller
+
+    yummy.qual(char=True)
+    # returns a list of ascii characters of phred quality values (offset 33)
+    # if char=False, the phred quality values is returned instead
+
+    yummy.trim()        
+    # trims the sequence using Richard Mott's algorithm (used in phred)
+    # can be used for trimming quality values returned by yummy.qual() as well
+    
+    yummy.seqrecord()   
+    # returns a SeqRecord object of the trace file
+
+    yummy.get_dir()
+    # returns a metadata stored in the file, accepts keys from yummy.tags (see below)
+    # half-cooked method, not yet capable of extracting the entire file metadata
+
+The file metadata (e.g. sample well, sequencing instrument) can be looked up in
+the ``self.meta`` dictionary: ::
+
+    yummy.meta['sampleid']    # string of sample ID entered before the run
+    yummy.meta['well']        # string of well ID
+    yummy.meta['instrument']  # string of sequencing machine model
+    yummy.meta['id']          # string of trace file name
+
+Keys for ``yummy.meta`` are the values of ``abifpy.TAGS``, except for ``'id'``.
 
 Additionally, these attributes can also be accessed: ::
 
     yummy.tags        # dictionary of tags with values of directory contents
-    yummy.score       # scores used for trimming, accessible after trim() is invoked
     yummy._header     # tuple of extracted header values
-    yummy._data       # string representation of file contents
+    yummy._raw        # string representation of file contents
 
-You can invoke the ``all_tags=True`` option when instantiating the class to get
-all tags available. These tags can then be viewed with the ``yummy.tags``
-attribute. Be warned that the module can only read data from the extracted tags
-above. If you want to make sense of the extra tags, refer to the `official
-spec`_. 
+You can get the metadata not contained in ``yummy.meta`` by using ``yummy.get_dir()``
+with one of the keys in ``yummy.tags`` as the argument, e.g.::
 
-The module can be used with Biopython if it is installed. It provides the
-following methods::
+    >>> yummy.get_dir('GTyp1')
+    'POP7'
 
-    yummy.write()       # writes a fasta file of the trace file
-    yummy.trim()        # trims the sequence using Richard Mott's algorithm (used in phred)
-    yummy.seqrecord()   # returns a SeqRecord object of the trace file
+Be warned though that this method is half-cooked. Sometimes it returns the value you want,
+other times it will only return ``None``. For more info on the file metadata, refer to 
+the `official spec`_. 
 
 Installation
 ============
 
-Just add the abifpy directory to your ``$PYTHONPATH`` (in .bashrc to make it persistent)
+Just add the abifpy directory to your ``$PYTHONPATH`` (in ``.bashrc`` to make it persistent).
 
 License
 =======
