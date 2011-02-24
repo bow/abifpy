@@ -33,7 +33,7 @@ class Trace(object):
             # dictionary for containing file metadata
             self.meta = {}
             # dictionary for containing extracted directory data
-            self.tags = {}
+            self.data = {}
             self.meta['id'] = in_file.replace('.ab1','')
             self.trimming = trimming
             # values contained in file header
@@ -43,14 +43,14 @@ class Trace(object):
 
             # build dictionary of data tags
             for entry in self._gen_dir():
-                self.tags[entry[0] + str(entry[1])] = entry
+                self.data[entry[0] + str(entry[1])] = entry
 
             # retrieve attributes from tags
-            for item in self.tags.keys():
+            for item in self.data.keys():
                 # only extract data from tags we care about
                 if item in TAGS:
                     # e.g. self.meta['well'] = 'B6'
-                    self.meta[TAGS[item]] = self.get_dir(item)
+                    self.meta[TAGS[item]] = self.get_data(item)
     
     def _gen_dir(self):
         """Generator for directory contents."""
@@ -72,9 +72,9 @@ class Trace(object):
             yield struct.unpack(fmt_head, self._raw[start:finish]) + (start,)
             index += 1
 
-    def get_dir(self, dir_entry):
+    def get_data(self, dir_entry):
         """Extracts data from directories in the file."""
-        tag_name, tag_no, elem_code, elem_size, elem_no, dir_size, dir_offset, dir_handle, data_offset = self.tags[dir_entry]
+        tag_name, tag_no, elem_code, elem_size, elem_no, dir_size, dir_offset, dir_handle, data_offset = self.data[dir_entry]
 
         # if data size is <= 4 bytes, data is stored inside the directory
         # so offset needs to be changed
@@ -99,7 +99,7 @@ class Trace(object):
     
     def seq(self):
         """Returns sequence contained in the trace file."""
-        data = self.get_dir('PBAS2')
+        data = self.get_data('PBAS2')
         seq = re.sub("K|Y|W|M|R|S",'N',data)
 
         if self.trimming:
@@ -113,7 +113,7 @@ class Trace(object):
         Keyword argument:
         char -- True: returns ascii representation of phred values, False: returns phredvalues
         """
-        data = self.get_dir('PCON2')
+        data = self.get_data('PCON2')
         qual_list = []
 
         if not char:    
@@ -178,12 +178,11 @@ class Trace(object):
         with open(file_name, 'w') as out_file:
             out_file.writelines(contents)
 
-    def trim(self, seq, segment=20, cutoff=0.05):
+    def trim(self, seq, cutoff=0.05):
         """Trims the sequence using Richard Mott's modified trimming algorithm.
         
         Keyword argument:
         seq -- sequence to be trimmed
-        segment -- segment size for calculating segment score
         cutoff -- probability cutoff value
 
         Trimmed bases are determined from their segment score, ultimately
@@ -193,6 +192,8 @@ class Trace(object):
         """
         # set flag for trimming
         take = False
+        # set segment size for calculating segment score
+        segment = 20
         trim_start = 0
         trim_finish = len(seq)
         
@@ -202,7 +203,7 @@ class Trace(object):
             # calculate score for trimming
             score_list =  []
             # actually the same as seq.qual(), but done to avoid infinite recursion
-            qual_hack = [ord(x) for x in self.get_dir('PCON2')]
+            qual_hack = [ord(x) for x in self.get_data('PCON2')]
             
             for qual in qual_hack:
                 # calculate probability back from formula used

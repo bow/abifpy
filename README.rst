@@ -10,6 +10,47 @@ abifpy is a python module that extracts sequence and various other data from
 Applied Biosystem's, Inc. format (ABIF) file. The module was written based on
 the `official spec`_ released by Applied Biosystems.
 
+Methods and Atrributes
+======================
+
+The module provides the following methods and attributes: ::
+
+seq(sequence)
+    returns a string of nucleotide sequence as called by the basecaller
+
+qual([char=True])
+    returns a list of ascii characters of phred quality values (offset 33)
+    if char=False, the phred quality values is returned instead
+
+trim(sequence[, cutoff=0.05])        
+    Trims the sequence using Richard Mott's algorithm (used in phred)
+    with the probability cutoff of 0.05, can be used for trimming quality
+    values returned by ``qual()`` as well.
+    
+seqrecord()   
+    Returns a SeqRecord object of the trace file (only if Biopython is installed)
+
+get_data(key)
+    Returns a metadata stored in the file, accepts keys from self.data (see below).
+    This is a half-cooked method, not yet capable of extracting the entire file metadata
+
+write([out_file="", qual=0])       
+    writes a fasta (qual=0), qual (qual=1), or fastq (qual=1) file from the trace file
+    default output is tracefile.fa
+
+TAGS
+    Dictionary for determining which metadata are extracted.
+
+meta
+    Dictionary that contains the file metadata. The keys are values of ``TAGS``,
+    except for ``id`` which is the trace file name. Default keys are ``sampleid``
+    (sample ID), ``well`` (sample well), and ``instrument`` (sequencing machine
+    model).
+
+data
+    Dictionary of tags with values of data directory contents. Keys are tag name +
+    tag number. Use ``getdata()`` to decode data.
+
 Usage
 =====
 
@@ -23,56 +64,32 @@ Or if you want to perform base trimming directly: ::
     
     >>> yummy = abifpy.Trace('tracefile.ab1', trimming=True)
 
-The module can be used with Biopython if it is installed. It provides the
-following methods: ::
+Viewing file metadata is easy: ::
 
-    yummy.write(out_file="", qual=0)       
-    # writes a fasta (qual=0), qual (qual=1), or fastq (qual=1) file from the trace file
-    # default output is tracefile.fa
+    >>> yummy.meta['sampleid']
+    'TOPO_clone1_F'
+    >>> yummy.meta['well']
+    'B6'
+    >>> yummy.meta['instrument']
+    '3730xl'
 
-    yummy.seq()
-    # returns a string of nucleotide sequence as called by the basecaller
-
-    yummy.qual(char=True)
-    # returns a list of ascii characters of phred quality values (offset 33)
-    # if char=False, the phred quality values is returned instead
-
-    yummy.trim()        
-    # trims the sequence using Richard Mott's algorithm (used in phred)
-    # can be used for trimming quality values returned by yummy.qual() as well
+If trimming was not performed when instantiating, you can still do it afterwards: ::
     
-    yummy.seqrecord()   
-    # returns a SeqRecord object of the trace file
+    >>> yummy.trim(yummy.seq())
 
-    yummy.get_dir()
-    # returns a metadata stored in the file, accepts keys from yummy.tags (see below)
-    # half-cooked method, not yet capable of extracting the entire file metadata
+You can trim the quality values itself as well: ::
 
-The file metadata (e.g. sample well, sequencing instrument) can be looked up in
-the ``self.meta`` dictionary: ::
+    >>> yummy.trim(yummy.qual())
 
-    yummy.meta['sampleid']    # string of sample ID entered before the run
-    yummy.meta['well']        # string of well ID
-    yummy.meta['instrument']  # string of sequencing machine model
-    yummy.meta['id']          # string of trace file name
-
-Keys for ``yummy.meta`` are the values of ``abifpy.TAGS``, except for ``'id'``.
-
-Additionally, these attributes can also be accessed: ::
-
-    yummy.tags        # dictionary of tags with values of directory contents
-    yummy._header     # tuple of extracted header values
-    yummy._raw        # string representation of file contents
-
-You can get the metadata not contained in ``yummy.meta`` by using ``yummy.get_dir()``
-with one of the keys in ``yummy.tags`` as the argument, e.g.::
+You can get the metadata not contained in ``meta`` by using ``get_dir()``
+with one of the keys in ``data`` as the argument, e.g.::
 
     >>> yummy.get_dir('GTyp1')
     'POP7'
 
 Be warned though that this method is half-cooked. Sometimes it returns the value you want,
-other times it will only return ``None``. For more info on the file metadata, refer to 
-the `official spec`_. 
+other times it will only return ``None``. For more info on the meaning of these tags and 
+the file metadata, refer to the `official spec`_. 
 
 Installation
 ============
@@ -81,6 +98,8 @@ Just add the abifpy directory to your ``$PYTHONPATH`` (in ``.bashrc`` to make it
 
 License
 =======
+
+abifpy is licensed under the MIT License.
 
 Copyright (c) 2011 by Wibowo Arindrarto
 
