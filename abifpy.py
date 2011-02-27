@@ -159,19 +159,22 @@ class Trace(object):
         
         if out_file == "":
             file_name = self.meta['id']
+            if qual == 0:
+                file_name += '.fa'
+            elif qual == 1:
+                file_name += '.qual'
+            elif qual == 2:
+                file_name += '.fq'
         else:
             file_name = out_file
         
         if qual == 0:
-            file_name += '.fa'
             contents = '>{0} {1}\n{2}\n'.format(
                         file_name, self.meta['sampleid'], self.seq())
         elif qual == 1:
-            file_name += '.qual'
             contents = '>{0} {1}\n{2}\n'.format(
                         file_name, self.meta['sampleid'], ' '.join(self.qual(char=False)))
         elif qual == 2:
-            file_name += '.fq'
             contents = '@{0} {1}\n{2}\n+{0} {1}\n{3}\n'.format(
                         file_name, self.meta['sampleid'], self.seq(), ''.join(self.qual()))
 

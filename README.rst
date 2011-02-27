@@ -16,10 +16,10 @@ Methods and Atrributes
 The module provides the following methods and attributes: ::
 
 seq(sequence)
-    returns a string of nucleotide sequence from the trace file.
+    Returns a string of nucleotide sequence from the trace file.
 
 qual([char=True])
-    returns a list of ascii characters of phred quality values (offset 33)
+    Returns a list of ascii characters of phred quality values (offset 33)
     if ``char=False``, the phred quality values is returned instead.
 
 trim(sequence[, cutoff=0.05])        
@@ -31,12 +31,12 @@ seqrecord()
     Returns a SeqRecord object of the trace file (only if Biopython is installed).
 
 get_data(key)
-    Returns a metadata stored in the file, accepts keys from self.data (see below).
+    Returns a metadata stored in the file, accepts keys from ``data`` (see below).
     This is a half-cooked method, not yet capable of extracting the entire file metadata.
 
 write([out_file="", qual=0])       
-    writes a fasta (qual=0), qual (qual=1), or fastq (qual=1) file from the trace file
-    default output is tracefile.fa.
+    Writes a fasta (``qual=0``), qual (``qual=1``), or fastq (``qual=1``) file
+    from the trace file. Default output is tracefile.fa.
 
 TAGS
     Dictionary for determining which metadata are extracted.
@@ -60,11 +60,11 @@ Usage
     >>> import abifpy
     >>> yummy = abifpy.Trace('tracefile.ab1')
 
-Or if you want to perform base trimming directly: ::
+Or if you want to perform base trimming directly::
     
     >>> yummy = abifpy.Trace('tracefile.ab1', trimming=True)
 
-Viewing the trace file metadata is easy: ::
+Viewing the trace file metadata is easy::
 
     >>> yummy.meta['sampleid']
     'TOPO_clone1_F'
@@ -73,15 +73,15 @@ Viewing the trace file metadata is easy: ::
     >>> yummy.meta['instrument']
     '3730xl'
 
-If trimming was not performed when instantiating, you can still do it afterwards: ::
+If trimming was not performed when instantiating, you can still do it afterwards::
     
     >>> yummy.trim(yummy.seq())
 
-The quality values itself can be trimmed as well: ::
+The quality values itself can be trimmed as well::
 
     >>> yummy.trim(yummy.qual())
 
-The metadata not contained in ``meta`` can be viewed using ``get_dir()``
+Metadata not contained in ``meta`` can be viewed using ``get_dir()``
 with one of the keys in ``data`` as the argument, e.g.::
 
     >>> yummy.get_dir('GTyp1')
