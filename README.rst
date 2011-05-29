@@ -15,8 +15,11 @@ Methods and Atrributes
 
 The module provides the following methods and attributes: ::
 
-seq(sequence)
+seq()
     Returns a string of nucleotide sequence from the trace file.
+
+seqrecord()   
+    Returns a SeqRecord object of the trace file (if Biopython is installed).
 
 qual([char=True])
     Returns a list of ascii characters of phred quality values (offset 33)
@@ -27,9 +30,6 @@ trim(sequence[, cutoff=0.05])
     with the probability cutoff of 0.05, can be used for trimming quality
     values returned by ``qual()`` as well.
     
-seqrecord()   
-    Returns a SeqRecord object of the trace file (only if Biopython is installed).
-
 get_data(key)
     Returns a metadata stored in the file, accepts keys from ``data`` (see below).
     This is a half-cooked method, not yet capable of extracting the entire file metadata.
@@ -64,14 +64,12 @@ Or if you want to perform base trimming directly::
     
     >>> yummy = abifpy.Trace('tracefile.ab1', trimming=True)
 
-Viewing the trace file metadata is easy::
+Sequencing results can be accessed as string or as a Biopython SeqRecord object::
 
-    >>> yummy.meta['sampleid']
-    'TOPO_clone1_F'
-    >>> yummy.meta['well']
-    'B6'
-    >>> yummy.meta['instrument']
-    '3730xl'
+    >>> yummy.seq()
+    'GCCAAGGTGCAGACTTCCATCT'
+    >>> yummy.seqrecord()
+    SeqRecord(seq=Seq('GCCAAGGTGCAGACTTCCATCT', Alphabet()), id='tracefile1', name='', description='tracefile1 seq', dbxrefs=[])
 
 If trimming was not performed when instantiating, you can still do it afterwards::
     
@@ -80,6 +78,15 @@ If trimming was not performed when instantiating, you can still do it afterwards
 The quality values itself can be trimmed as well::
 
     >>> yummy.trim(yummy.qual())
+
+Viewing the trace file metadata is easy::
+
+    >>> yummy.meta['sampleid']
+    'TOPO_clone1_F'
+    >>> yummy.meta['well']
+    'B6'
+    >>> yummy.meta['instrument']
+    '3730xl'
 
 Metadata not contained in ``meta`` can be viewed using ``get_dir()``
 with one of the keys in ``data`` as the argument, e.g.::
