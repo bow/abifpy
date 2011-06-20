@@ -7,7 +7,7 @@ import struct
 
 # dictionary for deciding which values to extract and contain in self.meta
 TAGS = {
-            'HCFG3':'instrument', 
+            'MODL1':'model', 
             'SMPL1':'sampleid', 
             'TUBE1':'well',
        } 
