@@ -44,7 +44,7 @@ TAGS
 meta
     Dictionary that contains the file metadata. The keys are values of ``TAGS``,
     except for ``id`` which is the trace file name. Default keys are ``sampleid``
-    (sample ID), ``well`` (sample well), and ``instrument`` (sequencing machine
+    (sample ID), ``well`` (sample well), and ``model`` (sequencing machine
     model).
 
 data
@@ -85,13 +85,13 @@ Viewing the trace file metadata is easy::
     'TOPO_clone1_F'
     >>> yummy.meta['well']
     'B6'
-    >>> yummy.meta['instrument']
-    '3730xl'
+    >>> yummy.meta['model']
+    '3730'
 
-Metadata not contained in ``meta`` can be viewed using ``get_dir()``
+Metadata not contained in ``meta`` can be viewed using ``get_data()``
 with one of the keys in ``data`` as the argument, e.g.::
 
-    >>> yummy.get_dir('GTyp1')
+    >>> yummy.get_data('GTyp1')
     'POP7'
 
 Be warned that this method is half-cooked. Sometimes it returns the value you want,
