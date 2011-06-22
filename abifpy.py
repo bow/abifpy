@@ -4,6 +4,7 @@
 
 import re
 import struct
+import datetime
 
 # dictionary for deciding which values to extract and contain in self.meta
 TAGS = {
@@ -42,7 +43,7 @@ class Trace(object):
             self.version = self._header[1]
 
             # build dictionary of data tags
-            for entry in self._gen_dir():
+            for entry in self._parse():
                 self.data[entry[0] + str(entry[1])] = entry
 
             # retrieve attributes from tags
@@ -52,7 +53,7 @@ class Trace(object):
                     # e.g. self.meta['well'] = 'B6'
                     self.meta[TAGS[item]] = self.get_data(item)
     
-    def _gen_dir(self):
+    def _parse(self):
         """Generator for directory contents."""
         # directory data structure:
         # file type, file, version, tag name, tag number, 
@@ -74,21 +75,47 @@ class Trace(object):
 
     def get_data(self, dir_entry):
         """Extracts data from directories in the file."""
-        tag_name, tag_no, elem_code, elem_size, elem_no, dir_size, dir_offset, dir_handle, data_offset = self.data[dir_entry]
+        tag_name, tag_no, elem_code, elem_size, elem_num, dir_size, dir_offset, dir_handle, data_offset = self.data[dir_entry]
 
         # if data size is <= 4 bytes, data is stored inside the directory
         # so offset needs to be changed
         if dir_size <= 4:
             dir_offset = data_offset + 20
 
-        if elem_code == 2:
-            fmt = str(dir_size) + 's'
+        if elem_code == 1:
+            fmt = ">{0}b".format(elem_num)
             data = struct.unpack(fmt, 
                     self._raw[dir_offset:dir_offset+dir_size])[0]
-        elif elem_code == 18:
-            fmt = str(dir_size-1) + 's'
+        elif elem_code == 2:
+            fmt = ">{0}s".format(elem_num)
+            data = struct.unpack(fmt, 
+                    self._raw[dir_offset:dir_offset+dir_size])[0]
+        elif elem_code == 4:
+            fmt = ">{0}h".format(elem_num)
+            data = struct.unpack(fmt, 
+                    self._raw[dir_offset:dir_offset+dir_size])
+        elif elem_code == 5:
+            fmt = ">{0}l".format(elem_num)
+            data = struct.unpack(fmt, 
+                    self._raw[dir_offset:dir_offset+dir_size])[0]
+        elif elem_code == 7:
+            fmt = ">{0}f".format(elem_num)
             data = struct.unpack(fmt,
-                    self._raw[dir_offset+1:dir_offset+dir_size])[0]
+                    self._raw[dir_offset:dir_offset+dir_size])[0]
+        elif elem_code == 10:
+            fmt = ">hbb"
+            year, month, date = struct.unpack(fmt,
+                    self._raw[dir_offset:dir_offset+dir_size])
+            data = datetime.date(year, month, date)
+        elif elem_code == 11:
+            fmt = ">4b"
+            hour, minute, second, hsecond = struct.unpack(fmt,
+                    self._raw[dir_offset:dir_offset+dir_size])
+            data = datetime.time(hour, minute, second, hsecond)
+        elif elem_code == 18:
+            fmt = ">{0}s".format(elem_num)
+            data = struct.unpack(fmt,
+                    self._raw[dir_offset:dir_offset+dir_size])[0].strip()
         elif elem_code == 19:
             fmt = str(dir_size-1) + 's'
             data = struct.unpack(fmt,
@@ -148,7 +175,7 @@ class Trace(object):
             print 'Biopython was not detected. No SeqRecord was created.'
             return None
 
-    def write(self, out_file="", qual=0):
+    def export(self, out_file="", qual=0):
         """Writes the trace file sequence to a fasta file.
         
         Keyword argument:
