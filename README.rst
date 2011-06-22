@@ -34,7 +34,7 @@ get_data(key)
     Returns a metadata stored in the file, accepts keys from ``data`` (see below).
     This is a half-cooked method, not yet capable of extracting the entire file metadata.
 
-write([out_file="", qual=0])       
+export([out_file="", qual=0])       
     Writes a fasta (``qual=0``), qual (``qual=1``), or fastq (``qual=1``) file
     from the trace file. Default output is tracefile.fa.
 
