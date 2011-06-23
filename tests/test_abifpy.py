@@ -12,7 +12,7 @@ class TestAbif(object):
         self.assertEqual(self.abif._raw[:4], 'ABIF')
 
     def testAllTagsParsed(self):
-        for key in self.abif.data.keys():
+        for key in self.abif.dir:
             # should be assertNone(), not available in py2.6
             assert (self.abif.getData(key) is not None)
 
