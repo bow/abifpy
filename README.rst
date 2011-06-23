@@ -10,10 +10,16 @@ abifpy is a python module that extracts sequence and various other data from
 Applied Biosystem's, Inc. format (ABIF) file. The module was written based on
 the `official spec`_ released by Applied Biosystems.
 
-Methods and Atrributes
-======================
+The module provides the following items: ::
 
-The module provides the following methods and attributes: ::
+*class* abifpy.Trace(inFile)
+    Class representing the trace file ``inFile``.
+
+*class* abifpy.TraceDir(tagEntry, rawData)
+    Class representing directory data in the trace file. ``tagEntry`` is
+    the a tuple for unpacked directory data and ``rawData`` is the contents
+    of the trace file. You would not normally need this unless you are
+    playing around with the file metadata.
 
 seq()
     Returns a string of nucleotide sequence from the trace file.
@@ -26,17 +32,16 @@ qual([char=True])
     if ``char=False``, the phred quality values is returned instead.
 
 trim(sequence[, cutoff=0.05])        
-    Trims the sequence using Richard Mott's algorithm (used in phred)
+    Returns a trimmed sequence using Richard Mott's algorithm (used in phred)
     with the probability cutoff of 0.05, can be used for trimming quality
     values returned by ``qual()`` as well.
     
 getData(key)
-    Returns a metadata stored in the file, accepts keys from ``data`` (see below).
-    This is a half-cooked method, not yet capable of extracting the entire file metadata.
+    Returns metadata stored in the file, accepts keys from ``dir`` (see below).
 
 export([outFile="", qual=0])       
     Writes a fasta (``qual=0``), qual (``qual=1``), or fastq (``qual=1``) file
-    from the trace file. Default output is tracefile.fa.
+    from the trace file. Default output is ``tracefile.fa``.
 
 TAGS
     Dictionary for determining which metadata are extracted.
@@ -45,9 +50,9 @@ meta
     Dictionary that contains the file metadata. The keys are values of ``TAGS``,
     except for ``id`` which is the trace file name.
 
-data
-    Dictionary of tags with values of data directory contents. Keys are tag name and 
-    tag number, concatenated. Use ``getData()`` to decode values in ``data``.
+dir
+    Dictionary of tags with values of data directory class instance. Keys are tag name and 
+    tag number, concatenated. Use ``getData()`` to access values in each ``dir`` entry.
 
 Usage
 =====
@@ -87,14 +92,12 @@ Viewing the trace file metadata is easy::
     '3730'
 
 Metadata not contained in ``meta`` can be viewed using ``getData()``
-with one of the keys in ``data`` as the argument, e.g.::
+with one of the keys in ``dir`` as the argument, e.g.::
 
     >>> yummy.getData('PTYP1')
     '96-well'
 
-Be warned that this method is half-cooked. Sometimes it returns the value you want,
-other times it returns ``None``. For more info on the meaning of these tags and 
-the file metadata, consult the `official spec`_. 
+For more info on the meaning of these tags and the file metadata, consult the `official spec`_. 
 
 Installation
 ============

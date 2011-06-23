@@ -21,7 +21,7 @@ TAGS = {
             'TUBE1':'well',
        } 
 
-__version__ = '0.3'
+__version__ = '0.35'
 
 class Trace(object):
     """Class representing trace file"""
@@ -43,7 +43,7 @@ class Trace(object):
                 # dictionary for containing file metadata
                 self.meta = {}
                 # dictionary for containing extracted directory data
-                self.data = {}
+                self.dir = {}
                 self.meta['id'] = inFile.replace('.ab1','').replace('.fsa','')
                 self.trimming = trimming
                 # values contained in file header
@@ -51,16 +51,14 @@ class Trace(object):
                 # file format version
                 self.version = self._header[1]
 
-                # build dictionary of data tags
+                # build dictionary of data tags and metadata
                 for entry in self._parse():
-                    self.data[entry[0] + str(entry[1])] = entry
-
-                # retrieve attributes from tags
-                for item in self.data.keys():
+                    key = entry.tagName + str(entry.tagNum)
+                    self.dir[key] = entry
                     # only extract data from tags we care about
-                    if item in TAGS:
+                    if key in TAGS:
                         # e.g. self.meta['well'] = 'B6'
-                        self.meta[TAGS[item]] = self.getData(item)
+                        self.meta[TAGS[key]] = self.getData(key)
     
     def _parse(self):
         """Generator for directory contents."""
@@ -79,66 +77,13 @@ class Trace(object):
             finish = headOffset + (index + 1) * headElemSize
             # added directory offset to tuple
             # to handle directories with data size <= 4 bytes
-            yield struct.unpack(fmtHead, self._raw[start:finish]) + (start,)
+            dirContent =  struct.unpack(fmtHead, self._raw[start:finish]) + (start,)
+            yield TraceDir(dirContent, self._raw)
             index += 1
+   
+    def getData(self, key):
+        return self.dir[key].tagData
 
-    def getData(self, tagEntry):
-        """Extracts data from directories in the file."""
-        tagName, tagNum, elemCode, elemSize, elemNum, dirSize, dirOffset, dirHandle, tagOffset = self.data[tagEntry]
-
-        # if data size is <= 4 bytes, data is stored inside the directory
-        # so offset needs to be changed
-        if dirSize <= 4:
-            dirOffset = tagOffset + 20
-
-        if elemCode == 1:
-            fmt = ">{0}b".format(elemNum)
-            data = struct.unpack(fmt, 
-                    self._raw[dirOffset:dirOffset+dirSize])[0]
-        elif elemCode == 2:
-            fmt = ">{0}s".format(elemNum)
-            data = struct.unpack(fmt, 
-                    self._raw[dirOffset:dirOffset+dirSize])[0]
-        elif elemCode == 4:
-            fmt = ">{0}h".format(elemNum)
-            data = struct.unpack(fmt, 
-                    self._raw[dirOffset:dirOffset+dirSize])
-        elif elemCode == 5:
-            fmt = ">{0}l".format(elemNum)
-            data = struct.unpack(fmt, 
-                    self._raw[dirOffset:dirOffset+dirSize])[0]
-        elif elemCode == 7:
-            fmt = ">{0}f".format(elemNum)
-            data = struct.unpack(fmt,
-                    self._raw[dirOffset:dirOffset+dirSize])[0]
-        elif elemCode == 10:
-            fmt = ">hbb"
-            year, month, date = struct.unpack(fmt,
-                    self._raw[dirOffset:dirOffset+dirSize])
-            data = datetime.date(year, month, date)
-        elif elemCode == 11:
-            fmt = ">4b"
-            hour, minute, second, hsecond = struct.unpack(fmt,
-                    self._raw[dirOffset:dirOffset+dirSize])
-            data = datetime.time(hour, minute, second, hsecond)
-        elif elemCode == 12:
-            fmt = ">iibb"
-            data = struct.unpack(fmt,
-                    self._raw[dirOffset:dirOffset+dirSize])[0]
-        elif elemCode == 18:
-            fmt = ">{0}s".format(elemNum-1)
-            data = struct.unpack(fmt,
-                    self._raw[dirOffset+1:dirOffset+dirSize])[0].strip()
-        elif elemCode == 19:
-            fmt = ">{0}s".format(elemNum-1)
-            data = struct.unpack(fmt,
-                    self._raw[dirOffset:dirOffset+dirSize-1])[0]
-        elif elemCode == 1024:
-            data = 'not available'
-        else:
-            data = None
-        return data
-    
     def seq(self):
         """Returns sequence contained in the trace file."""
         data = self.getData('PBAS2')
@@ -273,3 +218,69 @@ class Trace(object):
                     else:
                         break
             return seq[trimStart:trimFinish]
+
+class TraceDir(object):
+    """Class representing directory content."""
+    def __init__(self, tagEntry, rawData):
+        self.tagName = tagEntry[0]
+        self.tagNum = tagEntry[1]
+        self.elemCode = tagEntry[2]
+        self.elemSize = tagEntry[3]
+        self.elemNum = tagEntry[4]
+        self.dirSize = tagEntry[5]
+        self.dirOffset = tagEntry[6]
+        self.dirHandle = tagEntry[7]
+        self.tagOffset = tagEntry[8]
+
+        # if data size is <= 4 bytes, data is stored inside the directory
+        # so offset needs to be changed
+        if self.dirSize <= 4:
+            self.dirOffset = self.tagOffset + 20
+
+        if self.elemCode == 1:
+            fmt = ">{0}b".format(self.elemNum)
+            self.tagData = struct.unpack(fmt, 
+                    rawData[self.dirOffset:self.dirOffset+self.dirSize])[0]
+        elif self.elemCode == 2:
+            fmt = ">{0}s".format(self.elemNum)
+            self.tagData = struct.unpack(fmt, 
+                    rawData[self.dirOffset:self.dirOffset+self.dirSize])[0]
+        elif self.elemCode == 4:
+            fmt = ">{0}h".format(self.elemNum)
+            self.tagData = struct.unpack(fmt, 
+                    rawData[self.dirOffset:self.dirOffset+self.dirSize])
+        elif self.elemCode == 5:
+            fmt = ">{0}l".format(self.elemNum)
+            self.tagData = struct.unpack(fmt, 
+                    rawData[self.dirOffset:self.dirOffset+self.dirSize])[0]
+        elif self.elemCode == 7:
+            fmt = ">{0}f".format(self.elemNum)
+            self.tagData = struct.unpack(fmt,
+                    rawData[self.dirOffset:self.dirOffset+self.dirSize])[0]
+        elif self.elemCode == 10:
+            fmt = ">hbb"
+            year, month, date = struct.unpack(fmt,
+                    rawData[self.dirOffset:self.dirOffset+self.dirSize])
+            self.tagData = datetime.date(year, month, date)
+        elif self.elemCode == 11:
+            fmt = ">4b"
+            hour, minute, second, hsecond = struct.unpack(fmt,
+                    rawData[self.dirOffset:self.dirOffset+self.dirSize])
+            self.tagData = datetime.time(hour, minute, second, hsecond)
+        elif self.elemCode == 12:
+            fmt = ">iibb"
+            self.tagData = struct.unpack(fmt,
+                    rawData[self.dirOffset:self.dirOffset+self.dirSize])[0]
+        elif self.elemCode == 18:
+            fmt = ">{0}s".format(self.elemNum-1)
+            self.tagData = struct.unpack(fmt,
+                    rawData[self.dirOffset+1:self.dirOffset+self.dirSize])[0].strip()
+        elif self.elemCode == 19:
+            fmt = ">{0}s".format(self.elemNum-1)
+            self.tagData = struct.unpack(fmt,
+                    rawData[self.dirOffset:self.dirOffset+self.dirSize-1])[0]
+        elif self.elemCode == 1024:
+            self.tagData = 'not available'
+        else:
+            self.tagData = None
+    
