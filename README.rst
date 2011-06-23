@@ -30,11 +30,11 @@ trim(sequence[, cutoff=0.05])
     with the probability cutoff of 0.05, can be used for trimming quality
     values returned by ``qual()`` as well.
     
-get_data(key)
+getData(key)
     Returns a metadata stored in the file, accepts keys from ``data`` (see below).
     This is a half-cooked method, not yet capable of extracting the entire file metadata.
 
-export([out_file="", qual=0])       
+export([outFile="", qual=0])       
     Writes a fasta (``qual=0``), qual (``qual=1``), or fastq (``qual=1``) file
     from the trace file. Default output is tracefile.fa.
 
@@ -43,13 +43,11 @@ TAGS
 
 meta
     Dictionary that contains the file metadata. The keys are values of ``TAGS``,
-    except for ``id`` which is the trace file name. Default keys are ``sampleid``
-    (sample ID), ``well`` (sample well), and ``model`` (sequencing machine
-    model).
+    except for ``id`` which is the trace file name.
 
 data
     Dictionary of tags with values of data directory contents. Keys are tag name and 
-    tag number, concatenated. Use ``get_data()`` to decode values in ``data``.
+    tag number, concatenated. Use ``getData()`` to decode values in ``data``.
 
 Usage
 =====
@@ -88,11 +86,11 @@ Viewing the trace file metadata is easy::
     >>> yummy.meta['model']
     '3730'
 
-Metadata not contained in ``meta`` can be viewed using ``get_data()``
+Metadata not contained in ``meta`` can be viewed using ``getData()``
 with one of the keys in ``data`` as the argument, e.g.::
 
-    >>> yummy.get_data('GTyp1')
-    'POP7'
+    >>> yummy.getData('PTYP1')
+    '96-well'
 
 Be warned that this method is half-cooked. Sometimes it returns the value you want,
 other times it returns ``None``. For more info on the meaning of these tags and 
