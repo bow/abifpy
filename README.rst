@@ -10,16 +10,19 @@ abifpy is a python module that extracts sequence and various other data from
 Applied Biosystem's, Inc. format (ABIF) file. The module was written based on
 the `official spec`_ released by Applied Biosystems.
 
-The module provides the following items: ::
+The module provides the following items:
 
-*class* abifpy.Trace(inFile)
+*class* Trace(inFile)
     Class representing the trace file ``inFile``.
 
-*class* abifpy.TraceDir(tagEntry, rawData)
+*class* TraceDir(tagEntry, rawData)
     Class representing directory data in the trace file. ``tagEntry`` is
     the a tuple for unpacked directory data and ``rawData`` is the contents
     of the trace file. You would not normally need this unless you are
     playing around with the file metadata.
+
+Trace Objects
+=============
 
 seq()
     Returns a string of nucleotide sequence from the trace file.
