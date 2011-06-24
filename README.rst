@@ -15,7 +15,7 @@ The module provides the following items:
 *class* Trace(inFile)
     Class representing the trace file ``inFile``.
 
-*class* TraceDir(tagEntry, rawData)
+*class* _TraceDir(tagEntry, rawData)
     Class representing directory data in the trace file. ``tagEntry`` is
     the a tuple for unpacked directory data and ``rawData`` is the contents
     of the trace file. You would not normally need this unless you are
@@ -24,8 +24,10 @@ The module provides the following items:
 Trace Objects
 =============
 
-seq()
-    Returns a string of nucleotide sequence from the trace file.
+seq(ambig=False)
+    Returns a string of nucleotide sequence from the trace file. If 
+    ``ambig=False`` extended ambiguous base letters (K, Y, W, R, S, H, B, V, D) 
+    are converted to 'N'.
 
 seqrecord()   
     Returns a SeqRecord object of the trace file (if Biopython is installed).
@@ -39,23 +41,26 @@ trim(sequence[, cutoff=0.05])
     with the probability cutoff of 0.05, can be used for trimming quality
     values returned by ``qual()`` as well.
     
-getData(key)
-    Returns metadata stored in the file, accepts keys from ``dir`` (see below).
+get_data(key)
+    Returns metadata stored in the file, accepts keys from ``tags`` (see below).
 
 export([outFile="", qual=0])       
     Writes a fasta (``qual=0``), qual (``qual=1``), or fastq (``qual=1``) file
     from the trace file. Default output is ``tracefile.fa``.
 
-TAGS
+show_tag(key)
+    Prints information associated with the provided ``key`` tag.
+
+EXTRACT
     Dictionary for determining which metadata are extracted.
 
 meta
     Dictionary that contains the file metadata. The keys are values of ``TAGS``,
     except for ``id`` which is the trace file name.
 
-dir
+tags
     Dictionary of tags with values of data directory class instance. Keys are tag name and 
-    tag number, concatenated. Use ``getData()`` to access values in each ``dir`` entry.
+    tag number, concatenated. Use ``get_data()`` to access values in each ``tags`` entry.
 
 Usage
 =====
@@ -87,17 +92,17 @@ The quality values itself can be trimmed as well::
 
 Viewing the trace file metadata is easy::
 
-    >>> yummy.meta['sampleid']
+    >>> yummy.meta['sample']
     'TOPO_clone1_F'
     >>> yummy.meta['well']
     'B6'
     >>> yummy.meta['model']
     '3730'
 
-Metadata not contained in ``meta`` can be viewed using ``getData()``
-with one of the keys in ``dir`` as the argument, e.g.::
+Metadata not contained in ``meta`` can be viewed using ``get_data()``
+with one of the keys in ``tags`` as the argument, e.g.::
 
-    >>> yummy.getData('PTYP1')
+    >>> yummy.get_data('PTYP1')
     '96-well'
 
 For more info on the meaning of these tags and the file metadata, consult the `official spec`_. 
