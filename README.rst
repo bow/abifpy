@@ -44,18 +44,18 @@ trim(sequence[, cutoff=0.05])
 get_data(key)
     Returns metadata stored in the file, accepts keys from ``tags`` (see below).
 
-export([outFile="", qual=0])       
-    Writes a fasta (``qual=0``), qual (``qual=1``), or fastq (``qual=1``) file
-    from the trace file. Default output is ``tracefile.fa``.
+export([outFile="", format=0])       
+    Writes a fasta (``format='fasta'``), qual (``format='qual'``), or 
+    fastq (``format='fastq'``) file from the trace file. Default format is ``fasta``.
 
 show_tag(key)
-    Prints information associated with the provided ``key`` tag.
+    Prints information associated with the ``key`` tag, accepts keys from ``tags``.
 
 EXTRACT
     Dictionary for determining which metadata are extracted.
 
 meta
-    Dictionary that contains the file metadata. The keys are values of ``TAGS``,
+    Dictionary that contains the file metadata. The keys are values of ``EXTRACT``,
     except for ``id`` which is the trace file name.
 
 tags

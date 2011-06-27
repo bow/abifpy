@@ -16,11 +16,18 @@ EXTRACT = {
             'GTyp1':'polymer',
             'FWO_1':'baseorder',
             'MODL1':'model', 
+            'PLOC2':'tracepeaks',
             'SMPL1':'sample', 
             'TUBE1':'well',
-       } 
+          }     
 
-__version__ = '0.35'
+_BYTEFMT = {
+            1: ">{0}b", 2: ">{0}s", 4: ">{0}h", 5: ">{0}i", 
+            7: ">{0}f", 10: ">h2b", 11: ">4b", 12: ">2i2b",
+            18: ">{0}s", 19: ">{0}s"
+           }
+
+__version__ = '0.3.6'
 
 class Trace(object):
     """Class representing trace file"""
@@ -99,7 +106,7 @@ class Trace(object):
         data = self.get_data('PBAS2')
 
         if not ambig:
-            seq = re.sub("K|Y|W|M|R|S",'N',data)
+            seq = re.sub("K|Y|W|M|R|S", 'N', data)
         else:
             seq = data
 
@@ -119,14 +126,14 @@ class Trace(object):
 
         if not char:    
             for value in data:
-                qualList.append(str(ord(value)))
+                qualList.append(ord(value))
         else:
             for value in data:
                 if ord(value) > 93:
                     value = chr(93)
                 qualList.append(chr(ord(value) + 33))
         # return value is list to make it compatible with the char option
-        # and with the write() function (for writing .qual files)
+        # and with the export() function (for writing .qual files)
         if self.trimming:
             return self.trim(qualList)
         else:
@@ -144,28 +151,31 @@ class Trace(object):
         if biopython:
             seq = self.seq()
             return SeqRecord(Seq(seq), id=self.meta['id'], name="",
-                      description=self.meta['sample'])
+                             description=self.meta['sample'],
+                             letter_annotations = {"phred_quality":self.qual(char=False)})
         else:
             print 'Biopython was not detected. No SeqRecord was created.'
             return None
 
-    def export(self, outFile="", qual=0):
+    def export(self, outFile="", qual='fasta'):
         """Writes the trace file sequence to a fasta file.
         
         Keyword argument:
         outFile -- output file name (detault 'tracefile'.fa)
-        qual -- 0: write fasta file, 1: write qual file, 2: write fastq file
+        qual -- 'fasta': write fasta file, 'qual': write qual file, 'fastq': write fastq file
 
         """
         
         if outFile == "":
             fileName = self.meta['id']
-            if qual == 0:
+            if qual == 'fasta':
                 fileName += '.fa'
-            elif qual == 1:
+            elif qual == 'qual':
                 fileName += '.qual'
-            elif qual == 2:
+            elif qual == 'fastq':
                 fileName += '.fq'
+            else:
+                raise ValueError('Invalid file format: {0}.'.format(qual))
         else:
             fileName = outFile
         
@@ -251,50 +261,29 @@ class _TraceDir(object):
         if self.dataSize <= 4:
             self.dataOffset = self.tagOffset + 20
 
-        if self.elemCode == 1:
-            fmt = ">{0}b".format(self.elemNum)
-            self.tagData = struct.unpack(fmt, 
-                    rawData[self.dataOffset:self.dataOffset+self.dataSize])
-        elif self.elemCode == 2:
-            fmt = ">{0}s".format(self.elemNum)
-            self.tagData = struct.unpack(fmt, 
-                    rawData[self.dataOffset:self.dataOffset+self.dataSize])[0]
-        elif self.elemCode == 4:
-            fmt = ">{0}h".format(self.elemNum)
-            self.tagData = struct.unpack(fmt, 
-                    rawData[self.dataOffset:self.dataOffset+self.dataSize])
-        elif self.elemCode == 5:
-            fmt = ">{0}i".format(self.elemNum)
-            self.tagData = struct.unpack(fmt, 
-                    rawData[self.dataOffset:self.dataOffset+self.dataSize])
-        elif self.elemCode == 7:
-            fmt = ">{0}f".format(self.elemNum)
-            self.tagData = struct.unpack(fmt,
-                    rawData[self.dataOffset:self.dataOffset+self.dataSize])
-        elif self.elemCode == 10:
-            fmt = ">hbb"
-            year, month, date = struct.unpack(fmt,
-                    rawData[self.dataOffset:self.dataOffset+self.dataSize])
-            self.tagData = datetime.date(year, month, date)
-        elif self.elemCode == 11:
-            fmt = ">4b"
-            hour, minute, second, hsecond = struct.unpack(fmt,
-                    rawData[self.dataOffset:self.dataOffset+self.dataSize])
-            self.tagData = datetime.time(hour, minute, second, hsecond)
-        elif self.elemCode == 12:
-            fmt = ">iibb"
-            self.tagData = struct.unpack(fmt,
-                    rawData[self.dataOffset:self.dataOffset+self.dataSize])
-        elif self.elemCode == 18:
-            fmt = ">{0}s".format(self.elemNum-1)
-            self.tagData = struct.unpack(fmt,
-                    rawData[self.dataOffset+1:self.dataOffset+self.dataSize])[0]
-        elif self.elemCode == 19:
-            fmt = ">{0}s".format(self.elemNum-1)
-            self.tagData = struct.unpack(fmt,
-                    rawData[self.dataOffset:self.dataOffset+self.dataSize-1])[0]
-        else:
-            self.tagData = None
-    
-        if self.elemCode in [1, 4, 5, 7] and len(self.tagData) == 1:
+        self.tagData = self._unpack(rawData)
+
+        # no need to use tuple if len == 1
+        if self.elemCode not in [10, 11, 12, 1024] and len(self.tagData) == 1:
             self.tagData = self.tagData[0]
+
+        # account for different data types
+        if self.elemCode == 10:
+            self.tagData = datetime.date(*(self.tagData))
+        elif self.elemCode == 11:
+            self.tagData = datetime.time(*(self.tagData))
+        elif self.elemCode == 18:
+            self.tagData = self.tagData[1:]
+        elif self.elemCode == 19:
+            self.tagData = self.tagData[:-1]
+            
+    def _unpack(self, rawData):
+        start = self.dataOffset
+        finish = self.dataOffset + self.dataSize
+        num = self.elemNum
+        data = rawData[start:finish]
+
+        if self.elemCode in _BYTEFMT:
+            return struct.unpack(_BYTEFMT[self.elemCode].format(num), data)
+        else:
+            return None

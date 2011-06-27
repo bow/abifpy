@@ -11,13 +11,13 @@ class TestAbif(object):
         del self.untrimmedSeq
 
     def testFileType(self):
-        self.assertEqual(self.abif._raw[:4], 'ABIF')
+        assert self.abif._raw[:4] == 'ABIF'
 
-    def testAllTagsParsed(self):
+    def testTagData(self):
         for key in self.abif.tags:
             # should be assertNone(), not available in py2.6
             if self.abif.tags[key].elemCode != 1024:
-                assert (self.abif.get_data(key) is not None)
+                assert self.abif.get_data(key) != None
 
     def testTagDataLen(self):
         for key in self.abif.tags:
@@ -25,20 +25,48 @@ class TestAbif(object):
             data = self.abif.get_data(key)
             
             # 10 & 11 returns datetime, 12 is not clear, 1024 is ignored
+            # only check for strings, arrays, and numbers
             if code not in [10, 11, 12, 1024]:
                 # account for null character in pString and cString
                 mod = 1 if code in [18, 19] else 0
                 # if data is int/float, len is always 1
-                obtained = len(data) if type(data).__name__ not in ['int', 'float'] else 1
+                obtained = len(data) if not isinstance(data, (int, float)) else 1
                 expected = self.abif.tags[key].elemNum - mod
                 
-                self.assertEqual(obtained, expected)
+                assert obtained == expected
+    
+    def testTagDataType(self):
+        for key in self.abif.tags:
+            code = self.abif.tags[key].elemCode
+            data = self.abif.get_data(key)
+
+            # user data should return None
+            if code == 1024:
+                assert data == None
+            # check for string return type in tags 2, 18, 19
+            elif code in [2, 18, 19]:
+                assert isinstance(data, basestring)
+            # check for datetime return tag
+            elif code == 10:
+                assert isinstance(data, datetime.date)
+            # check for datetime return tag
+            elif code == 11:
+                assert isinstance(data, datetime.time)
+            # check for number return types
+            # some tags' data are still in a tuple of numbers, so will have to
+            # iterate over them
+            elif isinstance(data, tuple):
+                for item in data:
+                    assert isinstance(item, (int, float))
+            # otherwise just check for type directly
+            else:
+                assert isinstance(data, (int, float))
 
     def testTrimIsShorter(self):
-        self.assertTrue(len(self.trimmedSeq) <= len(self.untrimmedSeq))
+        assert len(self.trimmedSeq) <= len(self.untrimmedSeq)
 
     def testTrimIsSubset(self):
-        self.assertTrue(self.trimmedSeq in self.untrimmedSeq)
+        assert self.trimmedSeq in self.untrimmedSeq
 
 
 class TestAbif3730(TestAbif, unittest.TestCase):
