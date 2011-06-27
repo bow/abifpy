@@ -32,7 +32,7 @@ __version__ = '0.3.6'
 class Trace(object):
     """Class representing trace file"""
     def __init__(self, inFile, trimming=False):        
-        with open(inFile) as source:
+        with open(inFile, 'rb') as source:
             self._raw = source.read()
             try:
                 if not self._raw[:4] == 'ABIF':
