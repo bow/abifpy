@@ -30,11 +30,11 @@ class TestAbif(object):
                 # account for null character in pString and cString
                 mod = 1 if code in [18, 19] else 0
                 # if data is int/float, len is always 1
-                obtained = len(data) if not isinstance(data, (int, float)) else 1
+                obtained = len(data) if not isinstance(data, (int, float, bool)) else 1
                 expected = self.abif.tags[key].elemNum - mod
                 
                 assert obtained == expected
-    
+                
     def testTagDataType(self):
         for key in self.abif.tags:
             code = self.abif.tags[key].elemCode
@@ -52,6 +52,8 @@ class TestAbif(object):
             # check for datetime return tag
             elif code == 11:
                 assert isinstance(data, datetime.time)
+            elif code == 13:
+                assert isinstance(data, bool)
             # check for number return types
             # some tags' data are still in a tuple of numbers, so will have to
             # iterate over them
