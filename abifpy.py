@@ -22,12 +22,28 @@ EXTRACT = {
           }     
 
 _BYTEFMT = {
-            1: ">{0}b", 2: ">{0}s", 4: ">{0}h", 5: ">{0}i", 
-            7: ">{0}f", 10: ">h2b", 11: ">4b", 12: ">2i2b",
-            18: ">{0}s", 19: ">{0}s"
+            1: 'b',     # byte
+            2: 's',     # char
+            3: 'H',     # word
+            4: 'h',     # short
+            5: 'i',     # long
+            6: '2i',    # rational, legacy
+            7: 'f',     # float
+            8: 'd',     # double
+            10: 'h2B',  # date
+            11: '4B',   # time
+            12: '2i2b', # thumb
+            13: 'B',    # bool
+            14: '2h',   # point, legacy
+            15: '4h',   # rect, legacy
+            16: '2i',   # vPoint, legacy
+            17: '4i',   # vRect, legacy
+            18: 's',    # pString
+            19: 's',    # cString
+            20: '2i',   # Tag, legacy
            }
 
-__version__ = '0.3.6'
+__version__ = '0.4'
 
 class Trace(object):
     """Class representing trace file"""
@@ -45,7 +61,7 @@ class Trace(object):
                 # file type, file, version, tag name, tag number, element type code,
                 # element size, number of elements, data size, data offset, handle,
                 # file type, file version
-                fmtHead = '>4sH4sIHHIII'
+                fmtHead = '>4sH4sI2H3I'
                 # dictionary for containing file metadata
                 self.meta = {}
                 # dictionary for containing extracted directory data
@@ -58,7 +74,7 @@ class Trace(object):
                 self.version = self._header[1]
 
                 # build dictionary of data tags and metadata
-                for entry in self._parse():
+                for entry in self._parse_tag():
                     key = entry.tagName + str(entry.tagNum)
                     self.tags[key] = entry
                     # only extract data from tags we care about
@@ -66,13 +82,13 @@ class Trace(object):
                         # e.g. self.meta['well'] = 'B6'
                         self.meta[EXTRACT[key]] = self.get_data(key)
     
-    def _parse(self):
+    def _parse_tag(self):
         """Generator for directory contents."""
         # directory data structure:
         # file type, file, version, tag name, tag number, 
         # element type code, element size, number of elements
         # data size, data offset, handle
-        fmtHead = '>4sIHHIIII'
+        fmtHead = '>4sI2H4I'
         headElemSize = self._header[5]
         headElemNum = self._header[6]
         headOffset = self._header[8]
@@ -86,11 +102,8 @@ class Trace(object):
             dirContent =  struct.unpack(fmtHead, self._raw[start:finish]) + (start,)
             yield _TraceDir(dirContent, self._raw)
             index += 1
-   
-    def get_data(self, key):
-        return self.tags[key].tagData
 
-    def show_tag(self, key):
+    def _show_tag(self, key):
         print 'tag name:', self.tags[key].tagName
         print 'tag number:', self.tags[key].tagNum
         print 'element code:', self.tags[key].elemCode
@@ -100,6 +113,9 @@ class Trace(object):
         print 'data offset:', self.tags[key].dataOffset
         print 'data handle:', self.tags[key].dataHandle
         print 'tag offset:', self.tags[key].tagOffset
+   
+    def get_data(self, key):
+        return self.tags[key].tagData
 
     def seq(self, ambig=False):
         """Returns sequence contained in the trace file."""
@@ -122,16 +138,11 @@ class Trace(object):
         char -- True: returns ascii representation of phred values, False: returns phred values
         """
         data = self.get_data('PCON2')
-        qualList = []
 
         if not char:    
-            for value in data:
-                qualList.append(ord(value))
+            qualList = [ord(value) for value in data]
         else:
-            for value in data:
-                if ord(value) > 93:
-                    value = chr(93)
-                qualList.append(chr(ord(value) + 33))
+            qualList = [chr(ord(value) + 33) for value in data]
         # return value is list to make it compatible with the char option
         # and with the export() function (for writing .qual files)
         if self.trimming:
@@ -157,37 +168,43 @@ class Trace(object):
             print 'Biopython was not detected. No SeqRecord was created.'
             return None
 
-    def export(self, outFile="", qual='fasta'):
+    def export(self, outFile="", fmt='fasta'):
         """Writes the trace file sequence to a fasta file.
         
         Keyword argument:
         outFile -- output file name (detault 'tracefile'.fa)
-        qual -- 'fasta': write fasta file, 'qual': write qual file, 'fastq': write fastq file
+        fmt -- 'fasta': write fasta file, 'qual': write qual file, 'fastq': write fastq file
 
         """
         
         if outFile == "":
             fileName = self.meta['id']
-            if qual == 'fasta':
+            if fmt == 'fasta':
                 fileName += '.fa'
-            elif qual == 'qual':
+            elif fmt == 'qual':
                 fileName += '.qual'
-            elif qual == 'fastq':
+            elif fmt == 'fastq':
                 fileName += '.fq'
             else:
-                raise ValueError('Invalid file format: {0}.'.format(qual))
+                raise ValueError('Invalid file format: {0}.'.format(fmt))
         else:
             fileName = outFile
         
-        if qual == 0:
+        if fmt == 'fasta':
             contents = '>{0} {1}\n{2}\n'.format(
-                        fileName, self.meta['sampleid'], self.seq())
-        elif qual == 1:
+                        self.meta['id'], 
+                        self.meta['sample'], 
+                        self.seq())
+        elif fmt == 'qual':
             contents = '>{0} {1}\n{2}\n'.format(
-                        fileName, self.meta['sampleid'], ' '.join(self.qual(char=False)))
-        elif qual == 2:
+                        self.meta['id'], 
+                        self.meta['sample'], 
+                        ' '.join(map(str, self.qual(char=False))))
+        elif fmt == 'fastq':
             contents = '@{0} {1}\n{2}\n+{0} {1}\n{3}\n'.format(
-                        fileName, self.meta['sampleid'], self.seq(), ''.join(self.qual()))
+                        self.meta['id'], 
+                        self.meta['sample'], 
+                        self.seq(), ''.join(self.qual()))
 
         with open(fileName, 'w') as outFile:
             outFile.writelines(contents)
@@ -214,16 +231,9 @@ class Trace(object):
         if len(seq) <= segment:
             raise ValueError('Sequence can not be trimmed because it is shorter than the trim segment size')
         else:
-            # calculate score for trimming
-            scoreList =  []
-            # actually the same as seq.qual(), but done to avoid infinite recursion
-            qualHack = (ord(x) for x in self.get_data('PCON2'))
-            
-            for qual in qualHack:
-                # calculate probability back from formula used
-                # to calculate phred qual values
-                prob = 10 ** (qual/-10.0)
-                scoreList.append(cutoff - prob)
+            # calculate probability back from formula used
+            # to calculate phred qual values
+            scoreList = [cutoff - (10 ** (qual/-10.0)) for qual in self.qual(char=False)]
             # algorithm for obtaining trimming position values
             for index in xrange(len(seq)-segment):
                 # calculate segment score
@@ -263,27 +273,34 @@ class _TraceDir(object):
 
         self.tagData = self._unpack(rawData)
 
-        # no need to use tuple if len == 1
-        if self.elemCode not in [10, 11, 12, 1024] and len(self.tagData) == 1:
-            self.tagData = self.tagData[0]
-
-        # account for different data types
-        if self.elemCode == 10:
-            self.tagData = datetime.date(*(self.tagData))
-        elif self.elemCode == 11:
-            self.tagData = datetime.time(*(self.tagData))
-        elif self.elemCode == 18:
-            self.tagData = self.tagData[1:]
-        elif self.elemCode == 19:
-            self.tagData = self.tagData[:-1]
-            
-    def _unpack(self, rawData):
-        start = self.dataOffset
-        finish = self.dataOffset + self.dataSize
-        num = self.elemNum
-        data = rawData[start:finish]
+    def _unpack(self, raw):
 
         if self.elemCode in _BYTEFMT:
-            return struct.unpack(_BYTEFMT[self.elemCode].format(num), data)
+            
+            # because ">1s" unpacks differently from ">s"
+            num = '' if self.elemNum == 1 else str(self.elemNum)
+            fmt = '>' + num +  _BYTEFMT[self.elemCode]
+            start = self.dataOffset
+            finish = self.dataOffset + self.dataSize
+
+            data = struct.unpack(fmt, raw[start:finish])
+            
+            # no need to use tuple if len(data) == 1
+            if self.elemCode not in [10, 11] and len(data) == 1:
+                data = data[0]
+
+            # account for different data types
+            if self.elemCode == 10:
+                return datetime.date(*data)
+            elif self.elemCode == 11:
+                return datetime.time(*data)
+            elif self.elemCode == 13:
+                return bool(data)
+            elif self.elemCode == 18:
+                return data[1:]
+            elif self.elemCode == 19:
+                return data[:-1]
+            else:
+                return data
         else:
             return None
