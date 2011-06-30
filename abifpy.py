@@ -115,6 +115,7 @@ class Trace(object):
             index += 1
 
     def get_data(self, key):
+        """Returns data stored in a tag."""
         return self.tags[key].tagData
 
     def seq(self, ambig=False):
