@@ -8,39 +8,40 @@ import struct
 
 # dictionary for deciding which values to extract and contain in self.meta
 EXTRACT = {
+            'SMPL1':'sample', 
+            'TUBE1':'well',
+            'DySN1':'dye',
+            'GTyp1':'polymer',
+            'MODL1':'model', 
             'DATA1':'raw1',
             'DATA2':'raw2',
             'DATA3':'raw3',
             'DATA4':'raw4',
-            'DySN1':'dyename',
-            'GTyp1':'polymer',
-            'FWO_1':'baseorder',
-            'MODL1':'model', 
             'PLOC2':'tracepeaks',
-            'SMPL1':'sample', 
-            'TUBE1':'well',
+            'FWO_1':'baseorder',
           }     
 
+# dictionary for unpacking tag values
 _BYTEFMT = {
             1: 'b',     # byte
             2: 's',     # char
             3: 'H',     # word
             4: 'h',     # short
             5: 'i',     # long
-            6: '2i',    # rational, legacy
+            6: '2i',    # rational, legacy unsupported
             7: 'f',     # float
             8: 'd',     # double
             10: 'h2B',  # date
             11: '4B',   # time
             12: '2i2b', # thumb
             13: 'B',    # bool
-            14: '2h',   # point, legacy
-            15: '4h',   # rect, legacy
-            16: '2i',   # vPoint, legacy
-            17: '4i',   # vRect, legacy
+            14: '2h',   # point, legacy unsupported
+            15: '4h',   # rect, legacy unsupported
+            16: '2i',   # vPoint, legacy unsupported
+            17: '4i',   # vRect, legacy unsupported
             18: 's',    # pString
             19: 's',    # cString
-            20: '2i',   # Tag, legacy
+            20: '2i',   # Tag, legacy unsupported
            }
 
 __version__ = '0.4'
@@ -50,37 +51,48 @@ class Trace(object):
     def __init__(self, inFile, trimming=False):        
         with open(inFile, 'rb') as source:
             self._raw = source.read()
-            try:
-                if not self._raw[:4] == 'ABIF':
-                    raise IOError('Input is not a valid trace file')
-            except IOError:
-                source = None
-                raise
-            else:
-                # header data structure:
-                # file type, file, version, tag name, tag number, element type code,
-                # element size, number of elements, data size, data offset, handle,
-                # file type, file version
-                fmtHead = '>4sH4sI2H3I'
-                # dictionary for containing file metadata
-                self.meta = {}
-                # dictionary for containing extracted directory data
-                self.tags = {}
-                self.meta['id'] = inFile.replace('.ab1','').replace('.fsa','')
-                self.trimming = trimming
-                # values contained in file header
-                self._header = struct.unpack(fmtHead, self._raw[:30])
-                # file format version
-                self.version = self._header[1]
+        try:
+            if not self._raw[:4] == 'ABIF':
+                raise IOError('Input is not a valid trace file')
+        except IOError:
+            source = None
+            raise
+        else:
+            # header data structure:
+            # file type, file, version, tag name, tag number, element type code,
+            # element size, number of elements, data size, data offset, handle,
+            # file type, file version
+            # dictionary for containing file metadata
+            self.meta = {}
+            # dictionary for containing extracted directory data
+            self.tags = {}
+            self.meta['id'] = inFile
+            self.trimming = trimming
+            # values contained in file header
+            self._header = struct.unpack('>4sH4sI2H3I', self._raw[:30])
+            # file format version
+            self.version = self._header[1]
 
-                # build dictionary of data tags and metadata
-                for entry in self._parse_tag():
-                    key = entry.tagName + str(entry.tagNum)
-                    self.tags[key] = entry
-                    # only extract data from tags we care about
-                    if key in EXTRACT:
-                        # e.g. self.meta['well'] = 'B6'
-                        self.meta[EXTRACT[key]] = self.get_data(key)
+            # build dictionary of data tags and metadata
+            for entry in self._parse_tag():
+                key = entry.tagName + str(entry.tagNum)
+                self.tags[key] = entry
+                # only extract data from tags we care about
+                if key in EXTRACT:
+                    # e.g. self.meta['well'] = 'B6'
+                    self.meta[EXTRACT[key]] = self.get_data(key)
+    
+    def __str__(self):
+        """Prints data associated with the file."""
+        summary = ['Trace file: {0}'.format(self.meta['id'])]
+        summary.append('Sequence name: {0}'.format(self.meta['sample']))
+        summary.append('Sequence:\n{0}'.format(self.seq()))
+        summary.append('Quality values:\n{0}'.format(''.join(self.qual())))
+        summary.append('Sample well: {0}'.format(self.meta['well']))
+        summary.append('Dye: {0}'.format(self.meta['dye']))
+        summary.append('Polymer: {0}'.format(self.meta['polymer']))
+
+        return '\n'.join(summary)
     
     def _parse_tag(self):
         """Generator for directory contents."""
@@ -88,7 +100,6 @@ class Trace(object):
         # file type, file, version, tag name, tag number, 
         # element type code, element size, number of elements
         # data size, data offset, handle
-        fmtHead = '>4sI2H4I'
         headElemSize = self._header[5]
         headElemNum = self._header[6]
         headOffset = self._header[8]
@@ -99,21 +110,10 @@ class Trace(object):
             finish = headOffset + (index + 1) * headElemSize
             # added directory offset to tuple
             # to handle directories with data size <= 4 bytes
-            dirContent =  struct.unpack(fmtHead, self._raw[start:finish]) + (start,)
+            dirContent =  struct.unpack('>4sI2H4I', self._raw[start:finish]) + (start,)
             yield _TraceDir(dirContent, self._raw)
             index += 1
 
-    def _show_tag(self, key):
-        print 'tag name:', self.tags[key].tagName
-        print 'tag number:', self.tags[key].tagNum
-        print 'element code:', self.tags[key].elemCode
-        print 'element size:', self.tags[key].elemSize
-        print 'number of element:', self.tags[key].elemNum
-        print 'data size:', self.tags[key].dataSize
-        print 'data offset:', self.tags[key].dataOffset
-        print 'data handle:', self.tags[key].dataHandle
-        print 'tag offset:', self.tags[key].tagOffset
-   
     def get_data(self, key):
         return self.tags[key].tagData
 
@@ -176,7 +176,6 @@ class Trace(object):
         fmt -- 'fasta': write fasta file, 'qual': write qual file, 'fastq': write fastq file
 
         """
-        
         if outFile == "":
             fileName = self.meta['id']
             if fmt == 'fasta':
@@ -273,8 +272,22 @@ class _TraceDir(object):
 
         self.tagData = self._unpack(rawData)
 
-    def _unpack(self, raw):
+    def __str__(self):
+        """Prints data associated with a tag."""
+        summary = ['Tag name: {0}'.format(self.tagName)]
+        summary.append('Tag number: {0}'.format(self.tagNum))
+        summary.append('Element code: {0}'.format(self.elemCode))
+        summary.append('Element size: {0}'.format(self.elemSize))
+        summary.append('Number of element(s): {0}'.format(self.elemNum))
+        summary.append('Data size: {0}'.format(self.dataSize))
+        summary.append('Data offset: {0}'.format(self.dataOffset))
+        summary.append('Data handle: {0}'.format(self.dataHandle))
+        summary.append('Tag offset: {0}'.format(self.tagOffset))
+       
+        return '\n'.join(summary)
 
+    def _unpack(self, raw):
+        """Returns tag data"""
         if self.elemCode in _BYTEFMT:
             
             # because ">1s" unpacks differently from ">s"
