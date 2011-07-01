@@ -110,7 +110,8 @@ class Trace(object):
             finish = headOffset + (index + 1) * headElemSize
             # added directory offset to tuple
             # to handle directories with data size <= 4 bytes
-            dirContent =  struct.unpack('>4sI2H4I', self._raw[start:finish]) + (start,)
+            dirContent =  struct.unpack('>4sI2H4I', 
+                          self._raw[start:finish]) + (start,)
             yield _TraceDir(dirContent, self._raw)
             index += 1
 
@@ -164,7 +165,8 @@ class Trace(object):
             seq = self.seq()
             return SeqRecord(Seq(seq), id=self.meta['id'], name="",
                              description=self.meta['sample'],
-                             letter_annotations = {"phred_quality":self.qual(char=False)})
+                             letter_annotations={"phred_quality":
+                                                 self.qual(char=False)})
         else:
             print 'Biopython was not detected. No SeqRecord was created.'
             return None
@@ -217,40 +219,47 @@ class Trace(object):
         cutoff -- probability cutoff value
 
         Trimmed bases are determined from their segment score, ultimately
-        determined from each base's quality values. If a segment score is
-        negative, the entire segment will be trimmed.
+        determined from each base's quality values. 
         
+        More on:
+        http://www.phrap.org/phredphrap/phred.html
+        http://www.clcbio.com/manual/genomics/Quality_trimming.html
         """
         # set flag for trimming
         take = False
-        # set segment size for calculating segment score
+        # set minimum segment size
         segment = 20
         trimStart = 0
-        trimFinish = len(seq)
+        #trimFinish = len(seq)
         
         if len(seq) <= segment:
-            raise ValueError('Sequence can not be trimmed because it is shorter than the trim segment size')
+            raise ValueError('Sequence can not be trimmed because \
+                             it is shorter than the trim segment size')
         else:
             # calculate probability back from formula used
             # to calculate phred qual values
-            scoreList = [cutoff - (10 ** (qual/-10.0)) for qual in self.qual(char=False)]
-            # algorithm for obtaining trimming position values
-            for index in xrange(len(seq)-segment):
-                # calculate segment score
-                # if segment score is negative, trim the region out
-                segmentScore = reduce(lambda x,y:x+y,
-                                 scoreList[index:index+segment])
-                if not take and segmentScore > 0:
-                    trimStart = index
-                    take = True
-                elif take and segmentScore <= 0:
-                    # if segment length is longer than remaining bases
-                    # take up everything until the end
-                    if index + segment <= len(seq):
-                        trimFinish = index + segment - 1
-                        break
-                    else:
-                        break
+            scoreList = [cutoff - (10 ** (qual/-10.0)) for 
+                         qual in self.qual(char=False)]
+
+            # calculate cummulative scoreList
+            # if cummulative value < 0, set to 0
+            # first value is set to 0 (assumption: trimStart is always > 0)
+            runningSum = [0]
+            for i in xrange(1, len(scoreList)):
+                num = runningSum[-1] + scoreList[i]
+                if num < 0:
+                    runningSum.append(0)
+                else:
+                    runningSum.append(num)
+                    if not take:
+                        # trimStart = value when cummulative starts to be > 0
+                        trimStart = i
+                        take = True
+
+            # trimFinish = index of the highest cummulative value,
+            # marking the segment with the highest cummulative score 
+            trimFinish = runningSum.index(max(runningSum)) 
+
             return seq[trimStart:trimFinish]
 
 class _TraceDir(object):

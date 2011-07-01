@@ -65,10 +65,7 @@ class TestAbif(object):
                 assert isinstance(data, (int, float))
 
     def testTrimIsShorter(self):
-        assert len(self.trimmedSeq) <= len(self.untrimmedSeq)
-
-    def testTrimIsSubset(self):
-        assert self.trimmedSeq in self.untrimmedSeq
+        assert len(self.trimmedSeq) < len(self.untrimmedSeq)
 
 
 class TestAbif3730(TestAbif, unittest.TestCase):
