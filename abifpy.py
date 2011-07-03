@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-"""Python module for reading .ab1 trace files"""
+"""Python module for reading .ab1 trace files."""
 
 import datetime
 import re
@@ -8,17 +8,25 @@ import struct
 
 # dictionary for deciding which values to extract and contain in self.meta
 EXTRACT = {
-            'SMPL1':'sample', 
-            'TUBE1':'well',
-            'DySN1':'dye',
-            'GTyp1':'polymer',
-            'MODL1':'model', 
-            'DATA1':'raw1',
-            'DATA2':'raw2',
-            'DATA3':'raw3',
-            'DATA4':'raw4',
-            'PLOC2':'tracepeaks',
-            'FWO_1':'baseorder',
+            'SMPL1': 'sample', 
+            'TUBE1': 'well',
+            'DySN1': 'dye',
+            'GTyp1': 'polymer',
+            'MODL1': 'model', 
+            'RUND1': 'run start date',
+            'RUND2': 'run finish date',
+            'RUND3': 'data collection start date',
+            'RUND4': 'data collection finish date',
+            'RUNT1': 'run start time',
+            'RUNT2': 'run finish time',
+            'RUNT3': 'data collection start time',
+            'RUNT4': 'data collection finish time',
+            'DATA1': 'raw1',
+            'DATA2': 'raw2',
+            'DATA3': 'raw3',
+            'DATA4': 'raw4',
+            'PLOC2': 'tracepeaks',
+            'FWO_1': 'baseorder',
           }     
 
 # dictionary for unpacking tag values
@@ -47,7 +55,7 @@ _BYTEFMT = {
 __version__ = '0.4'
 
 class Trace(object):
-    """Class representing trace file"""
+    """Class representing trace file."""
     def __init__(self, inFile, trimming=False):        
         with open(inFile, 'rb') as source:
             self._raw = source.read()
@@ -66,7 +74,7 @@ class Trace(object):
             self.meta = {}
             # dictionary for containing extracted directory data
             self.tags = {}
-            self.meta['id'] = inFile
+            self.meta['id'] = inFile.replace('.ab1', '')
             self.trimming = trimming
             # values contained in file header
             self._header = struct.unpack('>4sH4sI2H3I', self._raw[:30])
@@ -74,7 +82,7 @@ class Trace(object):
             self.version = self._header[1]
 
             # build dictionary of data tags and metadata
-            for entry in self._parse_tag():
+            for entry in self._parse_dir():
                 key = entry.tagName + str(entry.tagNum)
                 self.tags[key] = entry
                 # only extract data from tags we care about
@@ -94,10 +102,10 @@ class Trace(object):
 
         return '\n'.join(summary)
     
-    def _parse_tag(self):
+    def _parse_dir(self):
         """Generator for directory contents."""
-        # directory data structure:
-        # file type, file, version, tag name, tag number, 
+        # header structure:
+        # file signature, file version, tag name, tag number, 
         # element type code, element size, number of elements
         # data size, data offset, handle
         headElemSize = self._header[5]
@@ -112,21 +120,21 @@ class Trace(object):
             # to handle directories with data size <= 4 bytes
             dirContent =  struct.unpack('>4sI2H4I', 
                           self._raw[start:finish]) + (start,)
-            yield _TraceDir(dirContent, self._raw)
             index += 1
+            yield _TraceDir(dirContent, self._raw)
 
     def get_data(self, key):
         """Returns data stored in a tag."""
         return self.tags[key].tagData
 
-    def seq(self, ambig=False):
+    def seq(self, ambig=True):
         """Returns sequence contained in the trace file."""
         data = self.get_data('PBAS2')
 
-        if not ambig:
-            seq = re.sub("K|Y|W|M|R|S", 'N', data)
-        else:
+        if ambig:
             seq = data
+        else:
+            seq = re.sub("K|Y|W|M|R|S", 'N', data)
 
         if self.trimming:
             return self.trim(seq)
@@ -226,11 +234,10 @@ class Trace(object):
         http://www.clcbio.com/manual/genomics/Quality_trimming.html
         """
         # set flag for trimming
-        take = False
+        start = False
         # set minimum segment size
         segment = 20
         trimStart = 0
-        #trimFinish = len(seq)
         
         if len(seq) <= segment:
             raise ValueError('Sequence can not be trimmed because \
@@ -251,10 +258,10 @@ class Trace(object):
                     runningSum.append(0)
                 else:
                     runningSum.append(num)
-                    if not take:
+                    if not start:
                         # trimStart = value when cummulative starts to be > 0
                         trimStart = i
-                        take = True
+                        start = True
 
             # trimFinish = index of the highest cummulative value,
             # marking the segment with the highest cummulative score 
