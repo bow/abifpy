@@ -11,6 +11,9 @@ class TestAbif(unittest.TestCase):
         self.trimmedSeq = self.abif.trim(self.abif.seq())
         self.untrimmedSeq = self.abif.seq()
 
+    def shortDescription(self):
+        return "Testing %s" % self.filename
+
     def runTest(self):
         self.file_type()
         self.tag_data()
@@ -19,18 +22,18 @@ class TestAbif(unittest.TestCase):
         self.trim_is_shorter() 
 
     def file_type(self):
-        """File type is ABIF."""
+        print "\nChecking file type..."
         self.assertEqual(self.abif._raw[:4], 'ABIF')
 
     def tag_data(self):
-        """All file tags returns data."""
+        print "Checking tag data parsing..."
         for key in self.abif.tags:
             # should be assertNone(), not available in py2.6
             if self.abif.tags[key].elemCode != 1024:
                 self.assertNotEqual(self.abif.get_data(key), None)
 
     def tag_data_len(self):
-        """All file tags returns the right length of data."""
+        print "Checking tag data lengths..."
         for key in self.abif.tags:
             code = self.abif.tags[key].elemCode
             data = self.abif.get_data(key)
@@ -47,7 +50,7 @@ class TestAbif(unittest.TestCase):
                 self.assertEqual(obtained, expected)
                 
     def tag_data_type(self):
-        """All file tag data is of the correct type."""
+        print "Checking tag data types..."
         for key in self.abif.tags:
             code = self.abif.tags[key].elemCode
             data = self.abif.get_data(key)
@@ -77,21 +80,34 @@ class TestAbif(unittest.TestCase):
                 self.assertTrue(isinstance(data, (int, float)))
 
     def trim_is_shorter(self):
-        """Trimming shortens sequence."""
+        print "Checking trimmed sequence length..."
         self.assertTrue(len(self.trimmedSeq) < len(self.untrimmedSeq))
 
 class TestAbifFake(unittest.TestCase):
 
-    def test_fake_file_type(self):
-        """IOError is raised if file is not ABIF."""
-        source = 'tests/fake.ab1'
-        self.assertRaises(IOError, abifpy.Trace, source)
+    def __init__(self, filename):
+        unittest.TestCase.__init__(self, methodName='runTest')
+        self.filename = filename
+
+    def runTest(self):
+        self.fake_file_type()
+
+    def fake_file_type(self):
+        print "\nIOError is raised if file is not ABIF..."
+        self.assertRaises(IOError, abifpy.Trace, self.filename)
 
 class TestAbifEmpty(unittest.TestCase):
 
-    def test_short_sequence_untrimmed(self):
-        """ValueError is raised if sequence length is shorter than 20."""
-        self.abif = abifpy.Trace('tests/empty.ab1')
+    def __init__(self, filename):
+        unittest.TestCase.__init__(self, methodName='runTest')
+        self.filename = filename
+        self.abif = abifpy.Trace(self.filename)
+
+    def runTest(self):
+        self.short_sequence_untrimmed()
+
+    def short_sequence_untrimmed(self):
+        print "\nValueError is raised if sequence length is shorter than 20."
         self.assertRaises(ValueError, self.abif.trim, self.abif.seq()) 
 
 
@@ -100,7 +116,10 @@ abif_fake = ['tests/fake.ab1',]
 abif_empty = ['tests/empty.ab1',]
 
 def run_suite():
-    return unittest.TestSuite([TestAbif(n) for n in abif_real])
+    suite = unittest.TestSuite([TestAbif(n) for n in abif_real])
+    suite.addTests(unittest.TestSuite([TestAbifFake(n) for n in abif_fake]))
+    suite.addTests(unittest.TestSuite([TestAbifEmpty(n) for n in abif_empty]))
+    return suite
 
 if __name__ == '__main__':
     runner = unittest.TextTestRunner(verbosity=2)
