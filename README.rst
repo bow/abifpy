@@ -24,7 +24,7 @@ The module provides the following items:
 Trace Objects
 =============
 
-seq(ambig=False)
+seq(ambig=True)
     Returns a string of nucleotide sequence from the trace file. If 
     ``ambig=False`` extended ambiguous base letters (K, Y, W, R, S, H, B, V, D) 
     are converted to 'N'.
