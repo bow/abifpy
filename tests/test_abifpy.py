@@ -89,6 +89,9 @@ class TestAbifFake(unittest.TestCase):
         unittest.TestCase.__init__(self, methodName='runTest')
         self.filename = filename
 
+    def shortDescription(self):
+        return "Testing %s" % self.filename
+
     def runTest(self):
         self.fake_file_type()
 
@@ -103,6 +106,9 @@ class TestAbifEmpty(unittest.TestCase):
         self.filename = filename
         self.abif = abifpy.Trace(self.filename)
 
+    def shortDescription(self):
+        return "Testing %s" % self.filename
+
     def runTest(self):
         self.short_sequence_untrimmed()
 
@@ -111,9 +117,9 @@ class TestAbifEmpty(unittest.TestCase):
         self.assertRaises(ValueError, self.abif.trim, self.abif.seq()) 
 
 
-abif_real = ['tests/3730.ab1', 'tests/3100.ab1', 'tests/310.ab1',]
-abif_fake = ['tests/fake.ab1',]
-abif_empty = ['tests/empty.ab1',]
+abif_real = ['3730.ab1', '3100.ab1', '310.ab1',]
+abif_fake = ['fake.ab1',]
+abif_empty = ['empty.ab1',]
 
 def run_suite():
     suite = unittest.TestSuite([TestAbif(n) for n in abif_real])
