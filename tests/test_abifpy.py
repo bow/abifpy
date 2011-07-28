@@ -8,8 +8,8 @@ class TestAbif(unittest.TestCase):
         unittest.TestCase.__init__(self, methodName='runTest')
         self.filename = filename
         self.abif = abifpy.Trace(self.filename)
-        self.trimmedSeq = self.abif.trim(self.abif.seq())
-        self.untrimmedSeq = self.abif.seq()
+        self.trimmedSeq = self.abif.trim(self.abif.seq)
+        self.untrimmedSeq = self.abif.seq
 
     def shortDescription(self):
         return "Testing %s" % self.filename
@@ -115,7 +115,7 @@ class TestAbifEmpty(unittest.TestCase):
 
     def short_sequence_untrimmed(self):
         print "\nValueError is raised if sequence length is shorter than 20."
-        self.assertRaises(ValueError, self.abif.trim, self.abif.seq()) 
+        self.assertRaises(ValueError, self.abif.trim, self.abif.seq) 
 
 
 abif_real = ['3730.ab1', '3100.ab1', '310.ab1',]

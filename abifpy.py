@@ -3,7 +3,6 @@
 """Python module for reading .ab1 trace files."""
 
 import datetime
-import re
 import struct
 
 # dictionary for deciding which values to extract and contain in self.data
@@ -81,7 +80,6 @@ class Trace(object):
             self.data = {}
             # dictionary for containing extracted directory data
             self.tags = {}
-            self.data['id'] = inFile.replace('.ab1', '')
             self.trimming = trimming
             # values contained in file header
             self._handle.seek(0)
@@ -98,13 +96,23 @@ class Trace(object):
                 if key in EXTRACT:
                     # e.g. self.data['well'] = 'B6'
                     self.data[EXTRACT[key]] = self.get_data(key)
+
+            self.id = inFile.replace('.ab1', '')
+            self.name = self.get_data('SMPL1')
+            self.seq = self.get_data('PBAS2')
+            self.qual = ''.join([chr(ord(value) + 33) for value in self.get_data('PCON2')])
+            self.qualVal = [ord(value) for value in self.get_data('PCON2')]
+
+            if trimming:
+                for seq in [self.seq, self.qual, self.qualVal]:
+                    seq = trim(seq)
     
     def __repr__(self):
         """Represents data associated with the file."""
-        summary = ['Trace file: {0}'.format(self.data['id'])]
-        summary.append('Sequence name: {0}'.format(self.data['name']))
-        summary.append('Sequence:\n{0}'.format(self.seq()))
-        summary.append('Quality values:\n{0}'.format(''.join(self.qual())))
+        summary = ['Trace file: {0}'.format(self.id)]
+        summary.append('Sequence name: {0}'.format(self.name))
+        summary.append('Sequence:\n{0}'.format(self.seq))
+        summary.append('Quality values:\n{0}'.format(self.qual))
         return '\n'.join(summary)
     
     def _parse_header(self, header):
@@ -132,38 +140,12 @@ class Trace(object):
         """Returns data stored in a tag."""
         return self.tags[key].tagData
 
-    def seq(self, ambig=True):
-        """Returns sequence contained in the trace file."""
-        data = self.get_data('PBAS2')
+    def seq_remove_ambig(self, seq):
+        """Replaces extra ambiguous bases with 'N'."""
+        seq = self.seq
 
-        if ambig:
-            seq = data
-        else:
-            seq = re.sub("K|Y|W|M|R|S", 'N', data)
-
-        if self.trimming:
-            return self.trim(seq)
-        else:
-            return seq
-
-    def qual(self, char=True):
-        """Returns a list of read quality values.
-        
-        Keyword argument:
-        char -- True: returns ascii representation of phred values, False: returns phred values
-        """
-        data = self.get_data('PCON2')
-
-        if not char:    
-            qualList = [ord(value) for value in data]
-        else:
-            qualList = [chr(ord(value) + 33) for value in data]
-        # return value is list to make it compatible with the char option
-        # and with the export() function (for writing .qual files)
-        if self.trimming:
-            return self.trim(qualList)
-        else:
-            return qualList
+        import re
+        return re.sub("K|Y|W|M|R|S", 'N', seq)
 
     def export(self, outFile="", fmt='fasta'):
         """Writes the trace file sequence to a fasta file.
@@ -174,7 +156,7 @@ class Trace(object):
 
         """
         if outFile == "":
-            fileName = self.data['id']
+            fileName = self.id
             if fmt == 'fasta':
                 fileName += '.fa'
             elif fmt == 'qual':
@@ -188,17 +170,17 @@ class Trace(object):
         
         if fmt == 'fasta':
             contents = '>{0} {1}\n{2}\n'.format(
-                        self.data['id'], 
+                        self.id, 
                         self.data['name'], 
                         self.seq())
         elif fmt == 'qual':
             contents = '>{0} {1}\n{2}\n'.format(
-                        self.data['id'], 
+                        self.id, 
                         self.data['name'], 
                         ' '.join(map(str, self.qual(char=False))))
         elif fmt == 'fastq':
             contents = '@{0} {1}\n{2}\n+{0} {1}\n{3}\n'.format(
-                        self.data['id'], 
+                        self.id, 
                         self.data['name'], 
                         self.seq(), ''.join(self.qual()))
 
@@ -232,7 +214,7 @@ class Trace(object):
             # calculate probability back from formula used
             # to calculate phred qual values
             scoreList = [cutoff - (10 ** (qual/-10.0)) for 
-                         qual in self.qual(char=False)]
+                         qual in self.qualVal]
 
             # calculate cummulative scoreList
             # if cummulative value < 0, set to 0
