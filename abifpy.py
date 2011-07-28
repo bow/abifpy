@@ -6,9 +6,9 @@ import datetime
 import re
 import struct
 
-# dictionary for deciding which values to extract and contain in self.meta
+# dictionary for deciding which values to extract and contain in self.data
 EXTRACT = {
-            'SMPL1': 'sample', 
+            'SMPL1': 'name', 
             'TUBE1': 'well',
             'DySN1': 'dye',
             'GTyp1': 'polymer',
@@ -78,10 +78,10 @@ class Trace(object):
             # element size, number of elements, data size, data offset, handle,
             # file type, file version
             # dictionary for containing file metadata
-            self.meta = {}
+            self.data = {}
             # dictionary for containing extracted directory data
             self.tags = {}
-            self.meta['id'] = inFile.replace('.ab1', '')
+            self.data['id'] = inFile.replace('.ab1', '')
             self.trimming = trimming
             # values contained in file header
             self._handle.seek(0)
@@ -96,19 +96,15 @@ class Trace(object):
                 self.tags[key] = entry
                 # only extract data from tags we care about
                 if key in EXTRACT:
-                    # e.g. self.meta['well'] = 'B6'
-                    self.meta[EXTRACT[key]] = self.get_data(key)
+                    # e.g. self.data['well'] = 'B6'
+                    self.data[EXTRACT[key]] = self.get_data(key)
     
-    def __str__(self):
-        """Prints data associated with the file."""
-        summary = ['Trace file: {0}'.format(self.meta['id'])]
-        summary.append('Sequence name: {0}'.format(self.meta['sample']))
+    def __repr__(self):
+        """Represents data associated with the file."""
+        summary = ['Trace file: {0}'.format(self.data['id'])]
+        summary.append('Sequence name: {0}'.format(self.data['name']))
         summary.append('Sequence:\n{0}'.format(self.seq()))
         summary.append('Quality values:\n{0}'.format(''.join(self.qual())))
-        summary.append('Sample well: {0}'.format(self.meta['well']))
-        summary.append('Dye: {0}'.format(self.meta['dye']))
-        summary.append('Polymer: {0}'.format(self.meta['polymer']))
-
         return '\n'.join(summary)
     
     def _parse_header(self, header):
@@ -169,25 +165,6 @@ class Trace(object):
         else:
             return qualList
 
-    def seqrecord(self):
-        """Returns a SeqRecord object of the trace file."""
-        try:
-            from Bio.Seq import Seq
-            from Bio.SeqRecord import SeqRecord
-            biopython = True
-        except ImportError:
-            biopython = False
-
-        if biopython:
-            seq = self.seq()
-            return SeqRecord(Seq(seq), id=self.meta['id'], name="",
-                             description=self.meta['sample'],
-                             letter_annotations={"phred_quality":
-                                                 self.qual(char=False)})
-        else:
-            print 'Biopython was not detected. No SeqRecord was created.'
-            return None
-
     def export(self, outFile="", fmt='fasta'):
         """Writes the trace file sequence to a fasta file.
         
@@ -197,7 +174,7 @@ class Trace(object):
 
         """
         if outFile == "":
-            fileName = self.meta['id']
+            fileName = self.data['id']
             if fmt == 'fasta':
                 fileName += '.fa'
             elif fmt == 'qual':
@@ -211,18 +188,18 @@ class Trace(object):
         
         if fmt == 'fasta':
             contents = '>{0} {1}\n{2}\n'.format(
-                        self.meta['id'], 
-                        self.meta['sample'], 
+                        self.data['id'], 
+                        self.data['name'], 
                         self.seq())
         elif fmt == 'qual':
             contents = '>{0} {1}\n{2}\n'.format(
-                        self.meta['id'], 
-                        self.meta['sample'], 
+                        self.data['id'], 
+                        self.data['name'], 
                         ' '.join(map(str, self.qual(char=False))))
         elif fmt == 'fastq':
             contents = '@{0} {1}\n{2}\n+{0} {1}\n{3}\n'.format(
-                        self.meta['id'], 
-                        self.meta['sample'], 
+                        self.data['id'], 
+                        self.data['name'], 
                         self.seq(), ''.join(self.qual()))
 
         with open(fileName, 'w') as outFile:
@@ -298,17 +275,18 @@ class _TraceDir(object):
 
         self.tagData = self._unpack(handle)
 
-    def __str__(self):
-        """Prints data associated with a tag."""
-        summary = ['Tag name: {0}'.format(self.tagName)]
-        summary.append('Tag number: {0}'.format(self.tagNum))
-        summary.append('Element code: {0}'.format(self.elemCode))
-        summary.append('Element size: {0}'.format(self.elemSize))
-        summary.append('Number of element(s): {0}'.format(self.elemNum))
-        summary.append('Data size: {0}'.format(self.dataSize))
-        summary.append('Data offset: {0}'.format(self.dataOffset))
-        summary.append('Data handle: {0}'.format(self.dataHandle))
-        summary.append('Tag offset: {0}'.format(self.tagOffset))
+    def __repr__(self):
+        """Represents data associated with a tag."""
+        summary = ['tagName: {0}'.format(repr(self.tagName))]
+        summary.append('tagNumber: {0}'.format(repr(self.tagNum)))
+        summary.append('elemCode: {0}'.format(repr(self.elemCode)))
+        summary.append('elemSize: {0}'.format(repr(self.elemSize)))
+        summary.append('elemNum: {0}'.format(repr(self.elemNum)))
+        summary.append('dataSize: {0}'.format(repr(self.dataSize)))
+        summary.append('dataOffset: {0}'.format(repr(self.dataOffset)))
+        summary.append('dataHandle: {0}'.format(repr(self.dataHandle)))
+        summary.append('tagOffset: {0}'.format(repr(self.tagOffset)))
+        summary.append('tagData: {0}'.format(repr(self.tagData)))
        
         return '\n'.join(summary)
 
