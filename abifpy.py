@@ -103,18 +103,26 @@ class Trace(object):
             self.qual = ''.join([chr(value + 33) for value in self.qualVal])
 
             if trimming:
-                for seq in [self.seq, self.qual, self.qualVal]:
-                    seq = trim(seq)
+                self.seq, self.qual, self.qualVal = map(self.trim, 
+                                                        [self.seq, self.qual,
+                                                        self.qualVal])
 
             self._handle.close()
     
     def __repr__(self):
         """Represents data associated with the file."""
-        summary = ['Trace file: {0}'.format(self.id)]
-        summary.append('Sequence name: {0}'.format(self.name))
-        summary.append('Sequence:\n{0}'.format(self.seq))
-        summary.append('Quality values:\n{0}'.format(self.qual))
-        return '\n'.join(summary)
+        if len(self.seq) > 10:
+            seq = "{0}...{1}".format(self.seq[:5], self.seq[-5:])
+            qualVal = "[{0}, ..., {1}]".format(
+                      repr(self.qualVal[:5])[1:-1], 
+                      repr(self.qualVal[-5:])[1:-1])
+        else:
+            seq = self.seq
+            qualVal = self.qualVal
+
+        return "{0}({1}, qualVal:{2}, id:{3}, name:{4})".format(
+                self.__class__.__name__, repr(seq), qualVal,
+                repr(self.id), repr(self.name))
     
     def _parse_header(self, header):
         """Generator for directory contents."""
