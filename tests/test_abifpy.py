@@ -23,7 +23,8 @@ class TestAbif(unittest.TestCase):
 
     def file_type(self):
         print "\nChecking file type..."
-        self.assertEqual(self.abif._raw[:4], 'ABIF')
+        self.abif._handle.seek(0)
+        self.assertEqual(self.abif._handle.read(4), 'ABIF')
 
     def tag_data(self):
         print "Checking tag data parsing..."

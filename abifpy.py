@@ -52,18 +52,25 @@ _BYTEFMT = {
             20: '2i',   # Tag, legacy unsupported
            }
 
+# header structure
+_HEADFMT = '>4sH4sI2H3I'
+
+# directory data structure
+_DIRFMT = '>4sI2H4I'
+
 __version__ = '0.4'
+
 
 class Trace(object):
     """Class representing trace file."""
     def __init__(self, inFile, trimming=False):        
-        with open(inFile, 'rb') as source:
-            self._raw = source.read()
+        self._handle = open(inFile, 'rb')
         try:
-            if not self._raw[:4] == 'ABIF':
+            self._handle.seek(0)
+            if not self._handle.read(4) == 'ABIF':
                 raise IOError('Input is not a valid trace file')
         except IOError:
-            source = None
+            self._handle = None
             raise
         else:
             # header data structure:
@@ -77,12 +84,14 @@ class Trace(object):
             self.meta['id'] = inFile.replace('.ab1', '')
             self.trimming = trimming
             # values contained in file header
-            self._header = struct.unpack('>4sH4sI2H3I', self._raw[:30])
+            self._handle.seek(0)
+            header = struct.unpack(_HEADFMT, 
+                     self._handle.read(struct.calcsize(_HEADFMT)))
             # file format version
-            self.version = self._header[1]
+            self.version = header[1]
 
             # build dictionary of data tags and metadata
-            for entry in self._parse_dir():
+            for entry in self._parse_header(header):
                 key = entry.tagName + str(entry.tagNum)
                 self.tags[key] = entry
                 # only extract data from tags we care about
@@ -102,26 +111,26 @@ class Trace(object):
 
         return '\n'.join(summary)
     
-    def _parse_dir(self):
+    def _parse_header(self, header):
         """Generator for directory contents."""
         # header structure:
         # file signature, file version, tag name, tag number, 
         # element type code, element size, number of elements
         # data size, data offset, handle
-        headElemSize = self._header[5]
-        headElemNum = self._header[6]
-        headOffset = self._header[8]
+        headElemSize = header[5]
+        headElemNum = header[6]
+        headOffset = header[8]
         index = 0
         
         while index < headElemNum:
             start = headOffset + index * headElemSize
-            finish = headOffset + (index + 1) * headElemSize
             # added directory offset to tuple
             # to handle directories with data size <= 4 bytes
-            dirContent =  struct.unpack('>4sI2H4I', 
-                          self._raw[start:finish]) + (start,)
+            self._handle.seek(start)
+            dirEntry =  struct.unpack(_DIRFMT, 
+                        self._handle.read(struct.calcsize(_DIRFMT))) + (start,)
             index += 1
-            yield _TraceDir(dirContent, self._raw)
+            yield _TraceDir(dirEntry, self._handle)
 
     def get_data(self, key):
         """Returns data stored in a tag."""
@@ -271,7 +280,7 @@ class Trace(object):
 
 class _TraceDir(object):
     """Class representing directory content."""
-    def __init__(self, tagEntry, rawData):
+    def __init__(self, tagEntry, handle):
         self.tagName = tagEntry[0]
         self.tagNum = tagEntry[1]
         self.elemCode = tagEntry[2]
@@ -287,7 +296,7 @@ class _TraceDir(object):
         if self.dataSize <= 4:
             self.dataOffset = self.tagOffset + 20
 
-        self.tagData = self._unpack(rawData)
+        self.tagData = self._unpack(handle)
 
     def __str__(self):
         """Prints data associated with a tag."""
@@ -303,17 +312,17 @@ class _TraceDir(object):
        
         return '\n'.join(summary)
 
-    def _unpack(self, raw):
+    def _unpack(self, handle):
         """Returns tag data"""
         if self.elemCode in _BYTEFMT:
             
             # because ">1s" unpacks differently from ">s"
             num = '' if self.elemNum == 1 else str(self.elemNum)
-            fmt = '>' + num +  _BYTEFMT[self.elemCode]
+            fmt = "{0}{1}{2}".format('>', num, _BYTEFMT[self.elemCode])
             start = self.dataOffset
-            finish = self.dataOffset + self.dataSize
-
-            data = struct.unpack(fmt, raw[start:finish])
+    
+            handle.seek(start)
+            data = struct.unpack(fmt, handle.read(struct.calcsize(fmt)))
             
             # no need to use tuple if len(data) == 1
             if self.elemCode not in [10, 11] and len(data) == 1:
