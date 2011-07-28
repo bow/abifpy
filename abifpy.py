@@ -105,6 +105,8 @@ class Trace(object):
             if trimming:
                 for seq in [self.seq, self.qual, self.qualVal]:
                     seq = trim(seq)
+
+            self._handle.close()
     
     def __repr__(self):
         """Represents data associated with the file."""
@@ -170,18 +172,18 @@ class Trace(object):
         if fmt == 'fasta':
             contents = '>{0} {1}\n{2}\n'.format(
                         self.id, 
-                        self.data['name'], 
-                        self.seq())
+                        self.name, 
+                        self.seq)
         elif fmt == 'qual':
             contents = '>{0} {1}\n{2}\n'.format(
                         self.id, 
-                        self.data['name'], 
-                        ' '.join(map(str, self.qual(char=False))))
+                        self.name, 
+                        ' '.join(map(str, self.qualVal)))
         elif fmt == 'fastq':
             contents = '@{0} {1}\n{2}\n+{0} {1}\n{3}\n'.format(
                         self.id, 
-                        self.data['name'], 
-                        self.seq(), ''.join(self.qual()))
+                        self.name, 
+                        self.seq, ''.join(self.qual))
 
         with open(fileName, 'w') as outFile:
             outFile.writelines(contents)
