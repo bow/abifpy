@@ -7,7 +7,6 @@ import struct
 
 # dictionary for deciding which values to extract and contain in self.data
 EXTRACT = {
-            'SMPL1': 'name', 
             'TUBE1': 'well',
             'DySN1': 'dye',
             'GTyp1': 'polymer',
@@ -57,7 +56,7 @@ _HEADFMT = '>4sH4sI2H3I'
 # directory data structure
 _DIRFMT = '>4sI2H4I'
 
-__version__ = '0.4'
+__version__ = '0.5'
 
 
 class Trace(object):
@@ -100,8 +99,8 @@ class Trace(object):
             self.id = inFile.replace('.ab1', '')
             self.name = self.get_data('SMPL1')
             self.seq = self.get_data('PBAS2')
-            self.qual = ''.join([chr(ord(value) + 33) for value in self.get_data('PCON2')])
             self.qualVal = [ord(value) for value in self.get_data('PCON2')]
+            self.qual = ''.join([chr(value + 33) for value in self.qualVal])
 
             if trimming:
                 for seq in [self.seq, self.qual, self.qualVal]:
