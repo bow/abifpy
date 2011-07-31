@@ -1,9 +1,15 @@
 #!/usr/bin/env python
+#
+# abifpy.py
+# python module for reading abi trace files
+# http://github.com/bow/abifpy
 
 """Python module for reading .ab1 trace files."""
 
 import datetime
 import struct
+
+from sys import version_info
 
 # dictionary for deciding which values to extract and contain in self.data
 EXTRACT = {
@@ -59,13 +65,26 @@ _DIRFMT = '>4sI2H4I'
 __version__ = '0.5'
 
 
+# to handle py3 IO
+def py3_get_string(byte):
+    if version_info[0] < 3:
+        return byte
+    else:
+        return byte.decode()
+
+def py3_get_byte(string):
+    if version_info[0] < 3:
+        return string
+    else:
+        return string.encode()
+
 class Trace(object):
     """Class representing trace file."""
     def __init__(self, inFile, trimming=False):        
         self._handle = open(inFile, 'rb')
         try:
             self._handle.seek(0)
-            if not self._handle.read(4) == 'ABIF':
+            if not self._handle.read(4) == py3_get_byte('ABIF'):
                 raise IOError('Input is not a valid trace file')
         except IOError:
             self._handle = None
@@ -99,15 +118,17 @@ class Trace(object):
             self.id = inFile.replace('.ab1', '')
             self.name = self.get_data('SMPL1')
             self.seq = self.get_data('PBAS2')
+            self.qual = ''.join([chr(ord(value) + 33) for value in self.get_data('PCON2')])
             self.qualVal = [ord(value) for value in self.get_data('PCON2')]
-            self.qual = ''.join([chr(value + 33) for value in self.qualVal])
 
             if trimming:
                 self.seq, self.qual, self.qualVal = map(self.trim, 
                                                         [self.seq, self.qual,
                                                         self.qualVal])
 
-            self._handle.close()
+    def close(sel):
+        """Closes the Trace file object."""
+        self._handle.close()
     
     def __repr__(self):
         """Represents data associated with the file."""
@@ -229,7 +250,7 @@ class Trace(object):
             # if cummulative value < 0, set to 0
             # first value is set to 0 (assumption: trimStart is always > 0)
             runningSum = [0]
-            for i in xrange(1, len(scoreList)):
+            for i in range(1, len(scoreList)):
                 num = runningSum[-1] + scoreList[i]
                 if num < 0:
                     runningSum.append(0)
@@ -249,7 +270,7 @@ class Trace(object):
 class _TraceDir(object):
     """Class representing directory content."""
     def __init__(self, tagEntry, handle):
-        self.tagName = tagEntry[0]
+        self.tagName = py3_get_string(tagEntry[0])
         self.tagNum = tagEntry[1]
         self.elemCode = tagEntry[2]
         self.elemSize = tagEntry[3]
@@ -298,16 +319,18 @@ class _TraceDir(object):
                 data = data[0]
 
             # account for different data types
-            if self.elemCode == 10:
+            if self.elemCode == 2:
+                return py3_get_string(data)
+            elif self.elemCode == 10:
                 return datetime.date(*data)
             elif self.elemCode == 11:
                 return datetime.time(*data)
             elif self.elemCode == 13:
                 return bool(data)
             elif self.elemCode == 18:
-                return data[1:]
+                return py3_get_string(data[1:])
             elif self.elemCode == 19:
-                return data[:-1]
+                return py3_get_string(data[:-1])
             else:
                 return data
         else:
