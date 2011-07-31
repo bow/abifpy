@@ -45,6 +45,9 @@ export([outFile="", fmt='fasta'])
     Writes a fasta (``fmt='fasta'``), qual (``fmt='qual'``), or 
     fastq (``fmt='fastq'``) file from the trace file. Default format is ``fasta``.
 
+close()
+    Closes the Trace file object.
+
 seq_remove_ambig(seq)
     Replaces extra ambigous base characters (K, Y, W, M, R, S) with 'N'. Accepts ``seq``
     for input.
