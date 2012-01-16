@@ -14,8 +14,8 @@ class TestAbif(unittest.TestCase):
         unittest.TestCase.__init__(self, methodName='runTest')
         self.filename = filename
         self.abif = abifpy.Trace(self.filename)
-        self.trimmedSeq = self.abif.trim(self.abif.seq)
-        self.untrimmedSeq = self.abif.seq
+        self.trimmed_seq = self.abif.trim(self.abif.seq)
+        self.untrimmed_seq = self.abif.seq
 
     def shortDescription(self):
         return "Testing %s" % self.filename
@@ -36,13 +36,13 @@ class TestAbif(unittest.TestCase):
         print "Checking tag data parsing..."
         for key in self.abif.tags:
             # should be assertNone(), not available in py2.6
-            if self.abif.tags[key].elemCode != 1024:
+            if self.abif.tags[key].elem_code != 1024:
                 self.assertNotEqual(self.abif.get_data(key), None)
 
     def tag_data_len(self):
         print "Checking tag data lengths..."
         for key in self.abif.tags:
-            code = self.abif.tags[key].elemCode
+            code = self.abif.tags[key].elem_code
             data = self.abif.get_data(key)
             
             # 10 & 11 returns datetime, 12 is not clear, 1024 is ignored
@@ -52,14 +52,14 @@ class TestAbif(unittest.TestCase):
                 mod = 1 if code in [18, 19] else 0
                 # if data is int/float, len is always 1
                 obtained = len(data) if not isinstance(data, (int, float, bool)) else 1
-                expected = self.abif.tags[key].elemNum - mod
+                expected = self.abif.tags[key].elem_num - mod
                 
                 self.assertEqual(obtained, expected)
                 
     def tag_data_type(self):
         print "Checking tag data types..."
         for key in self.abif.tags:
-            code = self.abif.tags[key].elemCode
+            code = self.abif.tags[key].elem_code
             data = self.abif.get_data(key)
 
             # user data should return None
@@ -88,7 +88,7 @@ class TestAbif(unittest.TestCase):
 
     def trim_is_shorter(self):
         print "Checking trimmed sequence length..."
-        self.assertTrue(len(self.trimmedSeq) < len(self.untrimmedSeq))
+        self.assertTrue(len(self.trimmed_seq) < len(self.untrimmed_seq))
 
 class TestAbifFake(unittest.TestCase):
 

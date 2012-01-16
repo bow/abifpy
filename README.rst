@@ -24,7 +24,7 @@ seq
 qual
     String of phred quality characters of the base-called sequence.
 
-qualVal
+qual_val
     List of phred quality values of the base-called sequence.
 
 id
@@ -36,12 +36,12 @@ name
 trim(sequence[, cutoff=0.05])        
     Returns a trimmed sequence using Richard Mott's algorithm (used in phred)
     with the probability cutoff of 0.05. Can be used on ``seq``, ``qual``, and
-    ``qualVal``.
+    ``qual_val``.
     
 get_data(key)
     Returns metadata stored in the file, accepts keys from ``tags`` (see below).
 
-export([outFile="", fmt='fasta'])       
+export([out_file="", fmt='fasta'])       
     Writes a fasta (``fmt='fasta'``), qual (``fmt='qual'``), or 
     fastq (``fmt='fastq'``) file from the trace file. Default format is ``fasta``.
 
@@ -76,14 +76,14 @@ Or if you want to perform base trimming directly::
     >>> yummy = abifpy.Trace('tracefile.ab1', trimming=True)
 
 Sequence can be accessed with the ``seq`` attribute. Other attributes of note
-are ``qual`` for phred quality characters, ``qualVal`` for phred quality values,
+are ``qual`` for phred quality characters, ``qual_val`` for phred quality values,
 ``id`` for sequencing trace file name, and ``name`` for the sample name::
 
     >>> yummy.seq
     'CCAAGGTGCAGACTTCCATCT'
     >>> yummy.qual
     '3824DESHSSSSS:DSSSSSS'
-    >>> yummy.qualVal
+    >>> yummy.qual_val
     [18, 23, 17, 19, 35, 36, 50, 39, 50, 50, 50, 50, 50, 25, 35, 50, 50, 50, 50, 50, 50]
     >>> yummy.id
     'tracefile'
