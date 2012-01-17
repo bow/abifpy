@@ -7,16 +7,21 @@ Python module for reading .ab1 trace files
 ------------------------------------------
 
 abifpy is a python module that extracts sequence and various other data from
-Applied Biosystem's, Inc. format (ABIF) file. The module was written based on
-the `official spec`_ released by Applied Biosystems.
+Applied Biosystem's, Inc. format (ABI) file. The module is python3-compatible
+and was written based on the `official spec`_ released by Applied Biosystems.
 
-The module provides the following items:
+A modified version of this module has been merged into the `Biopython 
+project`__, available from version 1.58 onwards. If you already have Biopython
+version >=1.58, there is no need to use abifpy. Despite that, I am keeping 
+the module available as a stand-alone for personal reasons :).
+
+abifpy provides the following items:
 
 *class* Trace(in_file)
     Class representing the trace file ``in_file``.
 
-Trace Objects
-=============
+Trace object attributes and methods
+===================================
 
 seq
     String of base-called nucleotide sequence stored in the file.
@@ -68,27 +73,27 @@ Usage
 ::
 
     $ python
-    >>> import abifpy
-    >>> yummy = abifpy.Trace('tracefile.ab1')
+    >>> from abifpy import Trace
+    >>> yummy = Trace('tests/3730.ab1')
 
 Or if you want to perform base trimming directly::
     
-    >>> yummy = abifpy.Trace('tracefile.ab1', trimming=True)
+    >>> yummy = Trace('tests/3730.ab1', trimming=True)
 
 Sequence can be accessed with the ``seq`` attribute. Other attributes of note
 are ``qual`` for phred quality characters, ``qual_val`` for phred quality values,
 ``id`` for sequencing trace file name, and ``name`` for the sample name::
 
     >>> yummy.seq
-    'CCAAGGTGCAGACTTCCATCT'
+    'GGGCGAGCKYYAYATTTTGGCAAGAATTGAGCTCT...
     >>> yummy.qual
-    '3824DESHSSSSS:DSSSSSS'
+    '5$%%%\'%%!!!\'!+5;726@>A=3824DESHSS...
     >>> yummy.qual_val
-    [18, 23, 17, 19, 35, 36, 50, 39, 50, 50, 50, 50, 50, 25, 35, 50, 50, 50, 50, 50, 50]
+    [20, 3, 4, 4, 4, 6, 4, 4, 0, 0, 0, 6, 0, 10, 20, 26, 22, 17, 21...
     >>> yummy.id
-    'tracefile'
+    '3730'
     >>> yummy.name
-    'TOPO_clone1_fwd'
+    '226032_C-ME-18_pCAGseqF'
 
 If trimming was not performed when instantiating, you can still do it afterwards::
     
@@ -102,11 +107,11 @@ Viewing the trace file metadata is easy. Use the values from ``EXTRACT``
 as the keys in ``data``::
 
     >>> yummy.data['well']
-    'B6'
+    'B9'
     >>> yummy.data['model']
     '3730'
     >>> yummy.data['run start date']
-    datetime.date(2009, 12, 10)
+    datetime.date(2009, 12, 12)
 
 metadata not contained in ``data`` can be viewed using ``get_data()``
 with one of the keys in ``tags`` as the argument, e.g.::
@@ -146,3 +151,4 @@ IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 .. _official spec: http://www.appliedbiosystems.com/support/software_community/ABIF_File_Format.pdf
+.. _Biopython project: http://biopython.org/wiki/Biopython
