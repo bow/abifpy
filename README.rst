@@ -12,8 +12,8 @@ the `official spec`_ released by Applied Biosystems.
 
 The module provides the following items:
 
-*class* Trace(inFile)
-    Class representing the trace file ``inFile``.
+*class* Trace(in_file)
+    Class representing the trace file ``in_file``.
 
 Trace Objects
 =============
