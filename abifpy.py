@@ -8,6 +8,7 @@
 
 import datetime
 import struct
+from os.path import splitext, basename
 
 from sys import version_info
 
@@ -117,7 +118,7 @@ class Trace(object):
                     # e.g. self.data['well'] = 'B6'
                     self.data[EXTRACT[key]] = self.get_data(key)
 
-            self.id = in_file.replace('.ab1', '')
+            self.id = self._get_file_id(in_file)
             self.name = self.get_data('SMPL1')
             self.seq = self.get_data('PBAS2')
             self.qual = ''.join([chr(ord(value) + 33) for value in self.get_data('PCON2')])
@@ -128,10 +129,6 @@ class Trace(object):
                                                         [self.seq, self.qual,
                                                         self.qual_val])
 
-    def close(sel):
-        """Closes the Trace file object."""
-        self._handle.close()
-    
     def __repr__(self):
         """Represents data associated with the file."""
         if len(self.seq) > 10:
@@ -167,6 +164,15 @@ class Trace(object):
                         self._handle.read(struct.calcsize(_DIRFMT))) + (start,)
             index += 1
             yield _TraceDir(dir_entry, self._handle)
+
+    def _get_file_id(self, in_file):
+        """Returns filename without extension."""
+        return splitext(basename(in_file))[0]
+
+    def close(sel):
+        """Closes the Trace file object."""
+        self._handle.close()
+    
 
     def get_data(self, key):
         """Returns data stored in a tag."""
