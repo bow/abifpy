@@ -65,7 +65,7 @@ _HEADFMT = '>4sH4sI2H3I'
 # directory data structure
 _DIRFMT = '>4sI2H4I'
 
-__version__ = '0.5'
+__version__ = '0.9'
 
 
 # to handle py3 IO
