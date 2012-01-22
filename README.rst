@@ -2,9 +2,9 @@
 ABIFPY
 ======
 
-------------------------------------------
-Python module for reading .ab1 trace files
-------------------------------------------
+-----------------------------------------------------------
+Python module for reading ABI Sanger sequencing trace files
+-----------------------------------------------------------
 
 abifpy is a python module that extracts sequence and various other data from
 Applied Biosystem's, Inc. format (ABI) file. The module is python3-compatible
@@ -124,7 +124,9 @@ For more info on the meaning of these tags and the file metadata, consult the `o
 Installation
 ============
 
-Just add the abifpy directory to your ``$PYTHONPATH`` (in ``.bashrc`` to make it persistent).
+* ``pip install abifpy``, or
+
+* Add the abifpy directory to your ``$PYTHONPATH`` (in ``.bashrc`` to make it persistent)
 
 License
 =======
