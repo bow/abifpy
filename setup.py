@@ -19,4 +19,12 @@ setup(
     url = "http://github.com/bow/abifpy/",
     license = "MIT",
     zip_safe = False,
+    classifiers = [
+        "Development Status :: 4 - Beta",
+        "Environment :: Console",
+        "Intended Audience :: Science/Research",
+        "License :: OSI Approved :: MIT License",
+        "Programming Language :: Python",
+        "Topic :: Scientific/Engineering :: Bio-Informatics",
+    ],
 )
