@@ -1,6 +1,10 @@
 *.py[co]
 
 # Packages
+<<<<<<< HEAD
+=======
+setup.py
+>>>>>>> 100f00e8961c25108aae9d1c26da08d81129fbc8
 *.egg
 *.egg-info
 dist

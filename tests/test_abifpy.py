@@ -53,7 +53,6 @@ class TestAbif(unittest.TestCase):
                 # if data is int/float, len is always 1
                 obtained = len(data) if not isinstance(data, (int, float, bool)) else 1
                 expected = self.abif.tags[key].elem_num - mod
-                
                 self.assertEqual(obtained, expected)
                 
     def tag_data_type(self):
