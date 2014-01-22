@@ -6,7 +6,7 @@ from abifpy import __version__
 
 
 version = __version__
-long_description = open("README").read()
+long_description = open("README.rst").read()
 
 setup(
     name = "abifpy",
