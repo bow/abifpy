@@ -12,6 +12,12 @@ from os.path import splitext, basename
 
 from sys import version_info
 
+RELEASE = False
+__version_info__ = ('1', '0', )
+__version__ = '.'.join(__version_info__)
+__version__ += '-dev' if not RELEASE else ''
+
+
 __all__ = ['Trace']
 
 # dictionary for deciding which values to extract and contain in self.data
@@ -64,9 +70,6 @@ _HEADFMT = '>4sH4sI2H3I'
 
 # directory data structure
 _DIRFMT = '>4sI2H4I'
-
-__version__ = '0.9'
-
 
 # to handle py3 IO
 def py3_get_string(byte):
