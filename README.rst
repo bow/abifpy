@@ -1,3 +1,13 @@
+======================
+:warning: unmaintained
+======================
+
+A modified version of this module has been merged into the `Biopython 
+project`_, available from version 1.58 onwards. If you already have Biopython
+version >=1.58, there is no need to use abifpy. Despite that, I am keeping 
+the module available as a stand-alone for personal reasons :).
+
+
 ======
 ABIFPY
 ======
@@ -9,11 +19,6 @@ Python module for reading ABI Sanger sequencing trace files
 abifpy is a python module that extracts sequence and various other data from
 Applied Biosystem's, Inc. format (ABI) file. The module is python3-compatible
 and was written based on the `official spec`_ released by Applied Biosystems.
-
-A modified version of this module has been merged into the `Biopython 
-project`_, available from version 1.58 onwards. If you already have Biopython
-version >=1.58, there is no need to use abifpy. Despite that, I am keeping 
-the module available as a stand-alone for personal reasons :).
 
 abifpy provides the following items:
 
